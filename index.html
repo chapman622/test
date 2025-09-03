@@ -21,7 +21,7 @@
       box-shadow: 0 8px 20px rgba(0,0,0,0.5);
       overflow-y: auto;
       cursor: move;
-      resize: both; /* makes it resizable */
+      resize: both;
     }
 
     #headerBar {
@@ -107,7 +107,7 @@
 
     async function fetchStaff() {
       try {
-        const res = await fetch(serverUrl + "?v=" + Date.now()); // bypass cache
+        const res = await fetch(serverUrl); // <-- NO ?v=
         const data = await res.json();
 
         // Debug log
@@ -189,3 +189,4 @@
   </script>
 </body>
 </html>
+
