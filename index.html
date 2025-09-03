@@ -10,17 +10,16 @@
     top: 50px;
     left: 50px;
     width: 300px;
-    height: 400px; /* default height */
+    height: 400px;
     background: #222;
     color: #fff;
     padding: 10px;
     border-radius: 10px;
     box-shadow: 0 0 10px #000;
-    cursor: move;
     z-index: 9999;
     display: flex;
     flex-direction: column;
-    resize: both; /* makes it resizable */
+    resize: both; /* resizable */
     overflow: hidden;
   }
   #staffHeader {
@@ -28,11 +27,12 @@
     justify-content: space-between;
     align-items: center;
     margin-bottom: 10px;
+    cursor: grab; /* draggable only from header */
   }
   #staffHeader h3 { 
     margin: 0; 
     font-size: 16px; 
-    color: red; 
+    color: red; /* header red */
   }
   #toggleBtn, #refreshBtn {
     padding: 3px 6px;
@@ -79,9 +79,11 @@ const staffListEl = document.getElementById("staffList");
 const refreshBtn = document.getElementById("refreshBtn");
 const toggleBtn = document.getElementById("toggleBtn");
 const box = document.getElementById("staffBox");
+const header = document.getElementById("staffHeader");
 
 let collapsed = false;
 
+// Fetch and display staff
 async function fetchStaff() {
   try {
     const res = await fetch(serverUrl);
@@ -108,7 +110,7 @@ async function fetchStaff() {
   }
 }
 
-// Initial fetch and auto-update every 30s
+// Initial fetch + auto-update every 30s
 fetchStaff();
 setInterval(fetchStaff, 30000);
 
@@ -122,21 +124,27 @@ toggleBtn.addEventListener('click', () => {
   toggleBtn.textContent = collapsed ? '+' : '−';
 });
 
-// Draggable box
+// Draggable from header only
 let isDragging = false, offsetX = 0, offsetY = 0;
-box.addEventListener('mousedown', e => {
-  if(e.target === toggleBtn || e.target === refreshBtn) return;
+
+header.addEventListener('mousedown', e => {
   isDragging = true;
   offsetX = e.clientX - box.offsetLeft;
   offsetY = e.clientY - box.offsetTop;
+  header.style.cursor = 'grabbing';
 });
+
 document.addEventListener('mousemove', e => {
   if(isDragging) {
     box.style.left = (e.clientX - offsetX) + 'px';
     box.style.top = (e.clientY - offsetY) + 'px';
   }
 });
-document.addEventListener('mouseup', () => { isDragging = false; });
+
+document.addEventListener('mouseup', () => {
+  isDragging = false;
+  header.style.cursor = 'grab';
+});
 </script>
 </body>
 </html>
