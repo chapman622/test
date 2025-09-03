@@ -10,6 +10,7 @@
     top: 50px;
     left: 50px;
     width: 300px;
+    height: 400px; /* default height */
     background: #222;
     color: #fff;
     padding: 10px;
@@ -17,6 +18,10 @@
     box-shadow: 0 0 10px #000;
     cursor: move;
     z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    resize: both; /* makes it resizable */
+    overflow: hidden;
   }
   #staffHeader {
     display: flex;
@@ -27,7 +32,7 @@
   #staffHeader h3 { 
     margin: 0; 
     font-size: 16px; 
-    color: red; /* Header now red! */
+    color: red; 
   }
   #toggleBtn, #refreshBtn {
     padding: 3px 6px;
@@ -38,7 +43,10 @@
     border-radius: 5px;
     font-size: 12px;
   }
-  #staffList { max-height: 400px; overflow-y: auto; }
+  #staffList { 
+    flex: 1; /* fills remaining height */
+    overflow-y: auto; 
+  }
   .staff-member { 
     display: flex;
     align-items: center;
@@ -117,7 +125,7 @@ toggleBtn.addEventListener('click', () => {
 // Draggable box
 let isDragging = false, offsetX = 0, offsetY = 0;
 box.addEventListener('mousedown', e => {
-  if(e.target === toggleBtn || e.target === refreshBtn) return; // Ignore clicks on buttons
+  if(e.target === toggleBtn || e.target === refreshBtn) return;
   isDragging = true;
   offsetX = e.clientX - box.offsetLeft;
   offsetY = e.clientY - box.offsetTop;
