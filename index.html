@@ -16,22 +16,63 @@
     border-radius: 10px;
     box-shadow: 0 0 10px #000;
     cursor: move;
+    z-index: 9999;
   }
-  #staffBox h3 { margin: 0 0 10px 0; text-align:center; }
-  .staff-member { padding: 5px; border-bottom: 1px solid #444; }
+  #staffHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+  }
+  #staffHeader h3 { 
+    margin: 0; 
+    font-size: 16px; 
+    color: red; /* Header now red! */
+  }
+  #toggleBtn, #refreshBtn {
+    padding: 3px 6px;
+    cursor: pointer;
+    background-color: #444;
+    color: #fff;
+    border: none;
+    border-radius: 5px;
+    font-size: 12px;
+  }
+  #staffList { max-height: 400px; overflow-y: auto; }
+  .staff-member { 
+    display: flex;
+    align-items: center;
+    padding: 5px;
+    border-bottom: 1px solid #444; 
+  }
   .staff-member:last-child { border-bottom: none; }
+  .staff-avatar {
+    width: 32px; height: 32px; border-radius: 50%; margin-right: 10px;
+  }
+  .donator { color: gold; font-weight: bold; }
 </style>
 </head>
 <body>
 
 <div id="staffBox">
-  <h3>Online Staff</h3>
+  <div id="staffHeader">
+    <h3>Online Staff</h3>
+    <div>
+      <button id="toggleBtn">−</button>
+      <button id="refreshBtn">⟳</button>
+    </div>
+  </div>
   <div id="staffList">Loading...</div>
 </div>
 
 <script>
-const serverUrl = "https://tycoon-2epova.users.cfx.re/status/widget/players.json"; // Change to your server
+const serverUrl = "https://tycoon-2epova.users.cfx.re/status/widget/players.json"; 
 const staffListEl = document.getElementById("staffList");
+const refreshBtn = document.getElementById("refreshBtn");
+const toggleBtn = document.getElementById("toggleBtn");
+const box = document.getElementById("staffBox");
+
+let collapsed = false;
 
 async function fetchStaff() {
   try {
@@ -39,7 +80,6 @@ async function fetchStaff() {
     const data = await res.json();
     const onlinePlayers = data.players;
 
-    // Filter staff (flag index 4)
     const staffMembers = onlinePlayers.filter(p => p[4] === true);
 
     if(staffMembers.length === 0) {
@@ -47,10 +87,10 @@ async function fetchStaff() {
       return;
     }
 
-    // Display staff
     staffListEl.innerHTML = staffMembers.map(p => `
-      <div class="staff-member">
-        ${p[0]} - ${p[5]} <!-- Username - Job -->
+      <div class="staff-member ${p[6] ? 'donator' : ''}">
+        ${p[3] ? `<img src="${p[3]}" class="staff-avatar" />` : ''}
+        ${p[0]} - ${p[5]} ${p[6] ? '(Donator)' : ''}
       </div>
     `).join("");
 
@@ -60,29 +100,35 @@ async function fetchStaff() {
   }
 }
 
-// Initial fetch and auto-update every 30 seconds
+// Initial fetch and auto-update every 30s
 fetchStaff();
 setInterval(fetchStaff, 30000);
 
-// Draggable box
-const box = document.getElementById("staffBox");
-let isDragging = false, offsetX = 0, offsetY = 0;
+// Refresh button
+refreshBtn.addEventListener('click', fetchStaff);
 
+// Toggle collapse/expand
+toggleBtn.addEventListener('click', () => {
+  collapsed = !collapsed;
+  staffListEl.style.display = collapsed ? 'none' : 'block';
+  toggleBtn.textContent = collapsed ? '+' : '−';
+});
+
+// Draggable box
+let isDragging = false, offsetX = 0, offsetY = 0;
 box.addEventListener('mousedown', e => {
+  if(e.target === toggleBtn || e.target === refreshBtn) return; // Ignore clicks on buttons
   isDragging = true;
   offsetX = e.clientX - box.offsetLeft;
   offsetY = e.clientY - box.offsetTop;
 });
-
 document.addEventListener('mousemove', e => {
   if(isDragging) {
     box.style.left = (e.clientX - offsetX) + 'px';
     box.style.top = (e.clientY - offsetY) + 'px';
   }
 });
-
 document.addEventListener('mouseup', () => { isDragging = false; });
-
 </script>
 </body>
 </html>
