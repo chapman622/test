@@ -63,7 +63,7 @@
 </div>
 
 <script>
-const serverUrl = "https://tycoon-2epova.users.cfx.re/status/widget/players.json"; 
+const serverUrlBase = "https://tycoon-2epova.users.cfx.re/status/widget/players.json"; 
 const staffListEl = document.getElementById("staffList");
 const refreshBtn = document.getElementById("refreshBtn");
 const toggleBtn = document.getElementById("toggleBtn");
@@ -102,6 +102,7 @@ function saveState() {
 // Fetch staff list
 async function fetchStaff() {
   try {
+    const serverUrl = serverUrlBase + "?v=" + Date.now(); // bypass cache
     const res = await fetch(serverUrl);
     const data = await res.json();
     const staffMembers = data.players.filter(p => p[4] === true); // staff flag
@@ -175,6 +176,11 @@ document.addEventListener('mouseup', () => {
 // Save size changes
 box.addEventListener('mouseup', saveState);
 box.addEventListener('keyup', saveState);
+
+// Auto-reload app in-game every 10 seconds for development/testing
+setInterval(() => {
+  location.reload();
+}, 10000);
 </script>
 </body>
 </html>
