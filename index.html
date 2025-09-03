@@ -42,11 +42,11 @@
     align-items: center;
     padding: 5px;
     border-bottom: 1px solid #444;
-    flex-direction: column;
-    align-items: flex-start;
   }
   .staff-member:last-child { border-bottom: none; }
   .staff-name { font-weight: bold; }
+  .staff-job { font-size: 0.8em; color: #ccc; }
+  .staff-member img { width:30px; height:30px; border-radius:50%; margin-right:5px; }
 </style>
 </head>
 <body>
@@ -114,7 +114,11 @@ async function fetchStaff() {
     } else {
       staffListEl.innerHTML = staffMembers.map(p => `
         <div class="staff-member">
-          <div class="staff-name">${p[0]}</div>
+          <img src="${p[3]}" alt="avatar">
+          <div>
+            <div class="staff-name">${p[0]}</div>
+            <div class="staff-job">${p[5]}</div>
+          </div>
         </div>
       `).join("");
 
