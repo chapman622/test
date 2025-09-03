@@ -19,7 +19,7 @@
     z-index: 9999;
     display: flex;
     flex-direction: column;
-    resize: both; /* resizable */
+    resize: both;
     overflow: hidden;
   }
   #staffHeader {
@@ -27,12 +27,12 @@
     justify-content: space-between;
     align-items: center;
     margin-bottom: 10px;
-    cursor: grab; /* draggable only from header */
+    cursor: grab;
   }
   #staffHeader h3 { 
     margin: 0; 
     font-size: 16px; 
-    color: red; /* header red */
+    color: red;
   }
   #toggleBtn, #refreshBtn {
     padding: 3px 6px;
@@ -44,7 +44,7 @@
     font-size: 12px;
   }
   #staffList { 
-    flex: 1; /* fills remaining height */
+    flex: 1;
     overflow-y: auto; 
   }
   .staff-member { 
@@ -83,7 +83,11 @@ const header = document.getElementById("staffHeader");
 
 let collapsed = false;
 
-// Fetch and display staff
+const ROW_HEIGHT = 40;      // approximate height per staff row
+const HEADER_HEIGHT = 40;   // header + buttons
+const PADDING = 20;         // extra padding
+
+// Fetch and display staff with dynamic height
 async function fetchStaff() {
   try {
     const res = await fetch(serverUrl);
@@ -94,6 +98,7 @@ async function fetchStaff() {
 
     if(staffMembers.length === 0) {
       staffListEl.innerHTML = "<i>No staff online</i>";
+      box.style.height = HEADER_HEIGHT + PADDING + "px"; // shrink if none
       return;
     }
 
@@ -103,6 +108,12 @@ async function fetchStaff() {
         ${p[0]} - ${p[5]} ${p[6] ? '(Donator)' : ''}
       </div>
     `).join("");
+
+    // Dynamically adjust height based on staff count
+    let newHeight = HEADER_HEIGHT + staffMembers.length * ROW_HEIGHT + PADDING;
+    newHeight = Math.min(newHeight, window.innerHeight - 50); // max height
+    newHeight = Math.max(newHeight, 100); // min height
+    box.style.height = newHeight + "px";
 
   } catch(err) {
     staffListEl.innerHTML = "<i>Error fetching staff</i>";
@@ -126,7 +137,6 @@ toggleBtn.addEventListener('click', () => {
 
 // Draggable from header only
 let isDragging = false, offsetX = 0, offsetY = 0;
-
 header.addEventListener('mousedown', e => {
   isDragging = true;
   offsetX = e.clientX - box.offsetLeft;
