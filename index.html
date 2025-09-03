@@ -117,7 +117,7 @@ document.addEventListener('mousemove', (e) => {
   }
 });
 
-// Resize functionality
+// Resize functionality with min lock
 let isResizing = false;
 resizeHandle.addEventListener('mousedown', (e) => {
   isResizing = true;
@@ -126,8 +126,10 @@ resizeHandle.addEventListener('mousedown', (e) => {
 document.addEventListener('mouseup', () => isResizing = false);
 document.addEventListener('mousemove', (e) => {
   if (isResizing && !minimized) {
-    staffWidget.style.width = (e.clientX - staffWidget.offsetLeft) + 'px';
-    staffWidget.style.height = (e.clientY - staffWidget.offsetTop) + 'px';
+    const newWidth = e.clientX - staffWidget.offsetLeft;
+    const newHeight = e.clientY - staffWidget.offsetTop;
+    staffWidget.style.width = Math.max(220, newWidth) + 'px'; // min width locked
+    staffWidget.style.height = Math.max(HEADER_HEIGHT, newHeight) + 'px'; // min height locked
   }
 });
 
