@@ -21,6 +21,7 @@
     overflow-y: auto;
     resize: both;
     box-sizing: border-box;
+    cursor: grab;
   }
 
   #headerBar {
@@ -29,7 +30,7 @@
     align-items: center;
     margin-bottom: 6px;
     font-size: 0.9em;
-    cursor: move;
+    cursor: default; /* header doesn’t need grab cursor now */
   }
 
   button {
@@ -115,6 +116,7 @@ if(saved.minimized) {
   document.getElementById("minimizeBtn").textContent = minimized ? "+" : "−";
 }
 
+// Fetch staff
 async function fetchStaff() {
   try {
     const res = await fetch(serverUrl);
@@ -189,12 +191,24 @@ function saveBoxState() {
   }));
 }
 
-// Drag anywhere on the box
+// Dragging (anywhere) while avoiding bottom-right resize zone
 let isDragging = false, offsetX, offsetY;
+
 box.onmousedown = e => {
-  isDragging = true;
-  offsetX = e.clientX - box.offsetLeft;
-  offsetY = e.clientY - box.offsetTop;
+  const rect = box.getBoundingClientRect();
+  const resizeZone = 12; // px from bottom-right corner
+  const isInResizeZone = (
+    e.clientX >= rect.right - resizeZone &&
+    e.clientY >= rect.bottom - resizeZone
+  );
+
+  if(!isInResizeZone) {
+    isDragging = true;
+    offsetX = e.clientX - rect.left;
+    offsetY = e.clientY - rect.top;
+    box.style.cursor = "grabbing";
+    e.preventDefault();
+  }
 };
 
 document.onmousemove = e => {
@@ -205,8 +219,11 @@ document.onmousemove = e => {
 };
 
 document.onmouseup = () => {
-  if(isDragging) isDragging = false;
-  saveBoxState();
+  if(isDragging) {
+    isDragging = false;
+    box.style.cursor = "grab";
+    saveBoxState();
+  }
 };
 
 // Initial fetch + auto-refresh every 10 sec
