@@ -135,6 +135,20 @@ minimizeBtn.addEventListener("click", () => {
 let simEnabled = false;
 document.getElementById("simBtn").addEventListener("click", () => simEnabled = !simEnabled);
 
+// Adjust width based on longest player name
+function adjustWidth() {
+    const names = Array.from(staffListEl.querySelectorAll(".staff-name")).map(n => n.textContent);
+    if(names.length === 0) return;
+    
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d");
+    ctx.font = "12px sans-serif"; 
+
+    const maxWidth = Math.max(...names.map(name => ctx.measureText(name).width));
+    const padding = 60; 
+    box.style.width = Math.min(maxWidth + padding, window.innerWidth - 20) + "px";
+}
+
 async function fetchStaff(){
     try{
         let serverUrl = serverUrlBase;
@@ -187,6 +201,8 @@ async function fetchStaff(){
                 minimizeBtn.textContent = "−";
             }
         }
+
+        adjustWidth(); // <-- Auto-width after updating staff
     } catch(err){
         staffListEl.innerHTML = "Error fetching staff";
         console.error(err);
