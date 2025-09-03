@@ -83,7 +83,6 @@
     <span id="headerTitle">Online Staff (0)</span>
     <button id="refreshBtn">⟳</button>
     <button id="simBtn">Sim</button>
-    <button id="settingsBtn">⚙</button>
   </div>
   <div id="staffList"></div>
 </div>
@@ -166,7 +165,6 @@ async function fetchStaff() {
 // Buttons
 document.getElementById("refreshBtn").onclick = fetchStaff;
 document.getElementById("simBtn").onclick = () => { simulate = !simulate; fetchStaff(); };
-document.getElementById("settingsBtn").onclick = () => alert("Settings clicked!");
 
 // Dragging from header only
 let isDragging = false, offsetX, offsetY;
