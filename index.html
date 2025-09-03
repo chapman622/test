@@ -34,7 +34,7 @@
     font-size: 16px; 
     color: red;
   }
-  #toggleBtn, #refreshBtn {
+  #toggleBtn, #refreshBtn, #simulateBtn {
     padding: 3px 6px;
     cursor: pointer;
     background-color: #444;
@@ -42,6 +42,7 @@
     border: none;
     border-radius: 5px;
     font-size: 12px;
+    margin-left: 2px;
   }
   #staffList { 
     flex: 1;
@@ -68,6 +69,7 @@
     <div>
       <button id="toggleBtn">−</button>
       <button id="refreshBtn">⟳</button>
+      <button id="simulateBtn">Simulate Staff</button>
     </div>
   </div>
   <div id="staffList">Loading...</div>
@@ -78,27 +80,45 @@ const serverUrl = "https://tycoon-2epova.users.cfx.re/status/widget/players.json
 const staffListEl = document.getElementById("staffList");
 const refreshBtn = document.getElementById("refreshBtn");
 const toggleBtn = document.getElementById("toggleBtn");
+const simulateBtn = document.getElementById("simulateBtn");
 const box = document.getElementById("staffBox");
 const header = document.getElementById("staffHeader");
 
 let collapsed = false;
+let simulate = false;
 
-const ROW_HEIGHT = 40;      // approximate height per staff row
-const HEADER_HEIGHT = 40;   // header + buttons
-const PADDING = 20;         // extra padding
+const ROW_HEIGHT = 40;
+const HEADER_HEIGHT = 40;
+const PADDING = 20;
 
-// Fetch and display staff with dynamic height
+// Toggle simulation mode
+simulateBtn.addEventListener('click', () => {
+  simulate = !simulate;
+  simulateBtn.textContent = simulate ? "Simulation ON" : "Simulate Staff";
+  fetchStaff(); // refresh immediately
+});
+
+// Fetch staff (real or simulated)
 async function fetchStaff() {
   try {
-    const res = await fetch(serverUrl);
-    const data = await res.json();
-    const onlinePlayers = data.players;
+    let onlinePlayers;
+    
+    if(simulate) {
+      // Generate random fake staff 0-5
+      onlinePlayers = Array.from({length: Math.floor(Math.random()*6)}, (_, i) => [
+        `Staff${i+1}`, 100+i, 1000+i, null, true, 'Job Role', Math.random() < 0.5
+      ]);
+    } else {
+      const res = await fetch(serverUrl);
+      const data = await res.json();
+      onlinePlayers = data.players;
+    }
 
     const staffMembers = onlinePlayers.filter(p => p[4] === true);
 
     if(staffMembers.length === 0) {
       staffListEl.innerHTML = "<i>No staff online</i>";
-      box.style.height = HEADER_HEIGHT + PADDING + "px"; // shrink if none
+      box.style.height = HEADER_HEIGHT + PADDING + "px";
       return;
     }
 
@@ -109,10 +129,10 @@ async function fetchStaff() {
       </div>
     `).join("");
 
-    // Dynamically adjust height based on staff count
+    // Dynamically adjust box height
     let newHeight = HEADER_HEIGHT + staffMembers.length * ROW_HEIGHT + PADDING;
-    newHeight = Math.min(newHeight, window.innerHeight - 50); // max height
-    newHeight = Math.max(newHeight, 100); // min height
+    newHeight = Math.min(newHeight, window.innerHeight - 50);
+    newHeight = Math.max(newHeight, 100);
     box.style.height = newHeight + "px";
 
   } catch(err) {
@@ -121,7 +141,7 @@ async function fetchStaff() {
   }
 }
 
-// Initial fetch + auto-update every 30s
+// Initial fetch + auto-update
 fetchStaff();
 setInterval(fetchStaff, 30000);
 
