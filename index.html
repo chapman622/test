@@ -123,12 +123,14 @@ async function fetchStaff() {
         </div>
       `).join("");
 
-      let newHeight = HEADER_HEIGHT + staffMembers.length * ROW_HEIGHT + PADDING;
-      newHeight = Math.min(newHeight, window.innerHeight - 50);
-      newHeight = Math.max(newHeight, 100);
-      box.style.height = newHeight + "px";
+      // Dynamically calculate box height based on number of staff
+      const staffCount = staffMembers.length;
+      const newHeight = HEADER_HEIGHT + staffCount * ROW_HEIGHT + PADDING;
+      const maxHeight = window.innerHeight - 50;
+      const minHeight = 100;
+      box.style.height = Math.max(minHeight, Math.min(newHeight, maxHeight)) + "px";
 
-      headerTitle.textContent = `Online Staff (${staffMembers.length})`;
+      headerTitle.textContent = `Online Staff (${staffCount})`;
       headerTitle.style.color = "limegreen";
     }
 
