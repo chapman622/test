@@ -90,6 +90,7 @@ let simulate = false;
 const ROW_HEIGHT = 40;
 const HEADER_HEIGHT = 40;
 const PADDING = 20;
+const REFRESH_INTERVAL = 5000; // 5 seconds
 
 // Toggle simulation mode
 simulateBtn.addEventListener('click', () => {
@@ -145,9 +146,11 @@ async function fetchStaff() {
   }
 }
 
-// Initial fetch + auto-update
+// Initial fetch
 fetchStaff();
-setInterval(fetchStaff, 30000);
+
+// Auto-refresh for both live and simulation
+setInterval(fetchStaff, REFRESH_INTERVAL);
 
 // Refresh button
 refreshBtn.addEventListener('click', fetchStaff);
