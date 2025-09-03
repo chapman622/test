@@ -13,7 +13,7 @@
     min-width: 200px;
     min-height: 100px;
     background: #1e1e1e;
-    border-radius: 12px; /* Rounded corners */
+    border-radius: 12px;
     color: #fff;
     overflow: hidden;
     user-select: none;
@@ -85,7 +85,6 @@
 
 <script>
 const box = document.getElementById('staffWidget');
-const header = document.getElementById('staffHeader');
 const staffListEl = document.getElementById('staffList');
 const headerTitle = document.getElementById('headerTitle');
 const simBtn = document.getElementById('simBtn');
@@ -146,20 +145,27 @@ document.addEventListener('mouseup', () => {
     isResizing = false;
 });
 
-// Min/Max button updated to minimize to header only
+// Min/Max button with width + height shrink
 let minimized = false;
+let prevWidth = box.offsetWidth;
+let prevHeight = box.offsetHeight;
+
 minMaxBtn.addEventListener('click', () => {
     minimized = !minimized;
     if(minimized){
         staffListEl.style.display = 'none';
         resizeHandle.style.display = 'none';
+        prevWidth = box.offsetWidth;
+        prevHeight = box.offsetHeight;
         box.style.height = HEADER_HEIGHT + 'px';
+        box.style.width = '200px'; // minimized width
     } else {
         staffListEl.style.display = 'block';
         resizeHandle.style.display = 'block';
         const staffCount = staffListEl.children.length;
         const newHeight = HEADER_HEIGHT + staffCount*ROW_HEIGHT + PADDING;
         box.style.height = Math.min(newHeight, window.innerHeight-50)+'px';
+        box.style.width = prevWidth + 'px';
     }
 });
 
@@ -181,7 +187,7 @@ simBtn.addEventListener('click', () => {
     box.style.height = newHeight+'px';
 });
 
-// Fetch staff from JSON (example)
+// Fetch staff from JSON
 async function fetchStaff() {
     try {
         const serverUrlBase = 'https://tycoon-2epova.users.cfx.re/status/widget/players.json';
