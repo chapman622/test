@@ -36,11 +36,12 @@
     font-size: 12px;
     margin-left: 2px;
   }
-  #simulateBtn { display: none; } /* Hidden simulation button */
   #staffList { flex: 1; overflow-y: auto; }
-  .staff-member { display: flex; align-items: center; padding: 5px; border-bottom: 1px solid #444; }
+  .staff-member { display: flex; align-items: center; padding: 5px; border-bottom: 1px solid #444; flex-direction: column; align-items: flex-start; }
   .staff-member:last-child { border-bottom: none; }
   .staff-avatar { width: 32px; height: 32px; border-radius: 50%; margin-right: 10px; }
+  .staff-name { font-weight: bold; }
+  .staff-time { font-size: 0.8em; color: #ccc; margin-top: 2px; }
 </style>
 </head>
 <body>
@@ -51,7 +52,6 @@
     <div>
       <button id="toggleBtn">−</button>
       <button id="refreshBtn">⟳</button>
-      <button id="simulateBtn">Simulate Staff</button>
     </div>
   </div>
   <div id="staffList">Loading...</div>
@@ -59,6 +59,7 @@
 
 <script>
 const serverUrl = "https://tycoon-2epova.users.cfx.re/status/widget/players.json"; 
+const sessionUrl = "https://ttycoon.eu/api/v1/serverdata/sessions";
 const staffListEl = document.getElementById("staffList");
 const refreshBtn = document.getElementById("refreshBtn");
 const toggleBtn = document.getElementById("toggleBtn");
@@ -67,8 +68,7 @@ const header = document.getElementById("staffHeader");
 const headerTitle = header.querySelector("h3");
 
 let collapsed = false;
-
-const ROW_HEIGHT = 40;
+const ROW_HEIGHT = 50;
 const HEADER_HEIGHT = 40;
 const PADDING = 20;
 const REFRESH_INTERVAL = 5000;
@@ -95,13 +95,27 @@ function saveState() {
   localStorage.setItem("staffBoxState", JSON.stringify(state));
 }
 
-// Fetch staff (live only)
+// Convert seconds to human readable
+function formatDuration(seconds) {
+  if(seconds < 60) return `${seconds}s`;
+  if(seconds < 3600) return `${Math.floor(seconds/60)}m`;
+  const h = Math.floor(seconds/3600);
+  const m = Math.floor((seconds % 3600)/60);
+  return `${h}h ${m}m`;
+}
+
+// Fetch both staff list and session times
 async function fetchStaff() {
   try {
-    const res = await fetch(serverUrl);
-    const data = await res.json();
-    const onlinePlayers = data.players;
-    const staffMembers = onlinePlayers.filter(p => p[4] === true); // Flag 4 is staff
+    const [playersRes, sessionsRes] = await Promise.all([
+      fetch(serverUrl),
+      fetch(sessionUrl)
+    ]);
+    const playersData = await playersRes.json();
+    const sessionsData = await sessionsRes.json();
+
+    const onlinePlayers = playersData.players;
+    const staffMembers = onlinePlayers.filter(p => p[4] === true); // staff flag
 
     if(staffMembers.length === 0) {
       staffListEl.innerHTML = "<i>No staff online</i>";
@@ -109,12 +123,16 @@ async function fetchStaff() {
       headerTitle.textContent = "Online Staff (0)";
       headerTitle.style.color = "red";
     } else {
-      staffListEl.innerHTML = staffMembers.map(p => `
-        <div class="staff-member">
-          ${p[3] ? `<img src="${p[3]}" class="staff-avatar" />` : ''}
-          ${p[0]} - ${p[5]}
-        </div>
-      `).join("");
+      staffListEl.innerHTML = staffMembers.map(p => {
+        const session = sessionsData.find(s => s.vrpId === p[2]);
+        const duration = session ? formatDuration(session.sessionDuration) : "";
+        return `
+          <div class="staff-member">
+            <div class="staff-name">${p[0]}</div>
+            ${duration ? `<div class="staff-time">(${duration} online)</div>` : ''}
+          </div>
+        `;
+      }).join("");
 
       let newHeight = HEADER_HEIGHT + staffMembers.length * ROW_HEIGHT + PADDING;
       newHeight = Math.min(newHeight, window.innerHeight - 50);
@@ -148,7 +166,7 @@ toggleBtn.addEventListener('click', () => {
   saveState();
 });
 
-// Draggable from header only
+// Draggable
 let isDragging = false, offsetX = 0, offsetY = 0;
 header.addEventListener('mousedown', e => {
   isDragging = true;
@@ -156,14 +174,12 @@ header.addEventListener('mousedown', e => {
   offsetY = e.clientY - box.offsetTop;
   header.style.cursor = 'grabbing';
 });
-
 document.addEventListener('mousemove', e => {
   if(isDragging) {
     box.style.left = (e.clientX - offsetX) + 'px';
     box.style.top = (e.clientY - offsetY) + 'px';
   }
 });
-
 document.addEventListener('mouseup', () => {
   if(isDragging) saveState();
   isDragging = false;
