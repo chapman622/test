@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Transport Tycoon Staff Tracker</title>
+<style>
+  body { font-family: sans-serif; }
+  #staffBox {
+    position: absolute;
+    top: 50px;
+    left: 50px;
+    width: 300px;
+    background: #222;
+    color: #fff;
+    padding: 10px;
+    border-radius: 10px;
+    box-shadow: 0 0 10px #000;
+    cursor: move;
+  }
+  #staffBox h3 { margin: 0 0 10px 0; text-align:center; }
+  .staff-member { padding: 5px; border-bottom: 1px solid #444; }
+  .staff-member:last-child { border-bottom: none; }
+</style>
+</head>
+<body>
+
+<div id="staffBox">
+  <h3>Online Staff</h3>
+  <div id="staffList">Loading...</div>
+</div>
+
+<script>
+const serverUrl = "https://tycoon-2epova.users.cfx.re/status/widget/players.json"; // Change to your server
+const staffListEl = document.getElementById("staffList");
+
+async function fetchStaff() {
+  try {
+    const res = await fetch(serverUrl);
+    const data = await res.json();
+    const onlinePlayers = data.players;
+
+    // Filter staff (flag index 4)
+    const staffMembers = onlinePlayers.filter(p => p[4] === true);
+
+    if(staffMembers.length === 0) {
+      staffListEl.innerHTML = "<i>No staff online</i>";
+      return;
+    }
+
+    // Display staff
+    staffListEl.innerHTML = staffMembers.map(p => `
+      <div class="staff-member">
+        ${p[0]} - ${p[5]} <!-- Username - Job -->
+      </div>
+    `).join("");
+
+  } catch(err) {
+    staffListEl.innerHTML = "<i>Error fetching staff</i>";
+    console.error(err);
+  }
+}
+
+// Initial fetch and auto-update every 30 seconds
+fetchStaff();
+setInterval(fetchStaff, 30000);
+
+// Draggable box
+const box = document.getElementById("staffBox");
+let isDragging = false, offsetX = 0, offsetY = 0;
+
+box.addEventListener('mousedown', e => {
+  isDragging = true;
+  offsetX = e.clientX - box.offsetLeft;
+  offsetY = e.clientY - box.offsetTop;
+});
+
+document.addEventListener('mousemove', e => {
+  if(isDragging) {
+    box.style.left = (e.clientX - offsetX) + 'px';
+    box.style.top = (e.clientY - offsetY) + 'px';
+  }
+});
+
+document.addEventListener('mouseup', () => { isDragging = false; });
+
+</script>
+</body>
+</html>
