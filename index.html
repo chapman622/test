@@ -23,13 +23,13 @@
   position: absolute;
   top: 50px;
   left: 50px;
+  cursor: move; /* Shows it’s draggable */
 }
 #headerBar {
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 5px;
-  cursor: move;
 }
 button {
   background: #555;
@@ -137,10 +137,9 @@ document.getElementById("refreshBtn").onclick = fetchStaff;
 document.getElementById("simBtn").onclick = () => { simulate = !simulate; fetchStaff(); };
 document.getElementById("settingsBtn").onclick = () => alert("Settings button clicked!");
 
-// Drag to move
+// Drag the entire box
 let isDragging = false, offsetX, offsetY;
-const headerBar = document.getElementById("headerBar");
-headerBar.onmousedown = e => { 
+box.onmousedown = e => { 
   isDragging = true;
   offsetX = e.clientX - box.offsetLeft;
   offsetY = e.clientY - box.offsetTop;
@@ -154,7 +153,7 @@ document.onmousemove = e => {
 document.onmouseup = () => {
   if(isDragging) {
     isDragging = false;
-    // Save position and size
+    // Save position/size
     localStorage.setItem("staffBoxPos", JSON.stringify({
       top: box.style.top,
       left: box.style.left,
