@@ -4,7 +4,6 @@
   <meta charset="UTF-8">
   <title>Transport Tycoon Staff Widget</title>
   <style>
-    /* Only the widget is styled */
     #staffWidget {
       position: absolute;
       top: 50px;
@@ -31,7 +30,7 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      font-weight: normal; /* count not bold */
+      font-weight: normal;
     }
 
     #staffList {
@@ -52,7 +51,6 @@
       margin-right: 5px;
     }
 
-    /* Player name bold, job normal */
     .staffRow div div:first-child {
       font-weight: bold;
     }
@@ -63,12 +61,19 @@
       font-size: 0.8em;
     }
 
-    #toggleBtn {
-      background: transparent;
+    #buttonContainer {
+      margin-left: 10px;
+    }
+
+    .controlBtn {
+      background: #555;
       border: none;
       color: white;
-      font-size: 16px;
+      padding: 2px 6px;
+      margin-left: 5px;
+      border-radius: 3px;
       cursor: pointer;
+      font-size: 12px;
     }
   </style>
 </head>
@@ -77,7 +82,10 @@
 <div id="staffWidget">
   <div id="staffHeader">
     <span id="headerTitle">Online Staff (0)</span>
-    <button id="toggleBtn">−</button>
+    <div id="buttonContainer">
+      <button id="toggleBtn" class="controlBtn">−</button>
+      <button id="simBtn" class="controlBtn">Sim</button>
+    </div>
   </div>
   <div id="staffList"></div>
 </div>
@@ -88,6 +96,7 @@ const header = document.getElementById("staffHeader");
 const staffListEl = document.getElementById("staffList");
 const headerTitle = document.getElementById("headerTitle");
 const toggleBtn = document.getElementById("toggleBtn");
+const simBtn = document.getElementById("simBtn");
 
 let minimized = false;
 let dragOffsetX = 0;
@@ -95,7 +104,6 @@ let dragOffsetY = 0;
 let dragging = false;
 let resizing = false;
 
-const serverUrlBase = "https://tycoon-2epova.users.cfx.re/status/widget/players.json"; 
 const HEADER_HEIGHT = 35;
 const PADDING = 10;
 const ROW_HEIGHT = 30;
@@ -132,50 +140,52 @@ toggleBtn.addEventListener("click", () => {
     toggleBtn.textContent = "+";
     staffListEl.style.overflowY = "hidden";
   } else {
-    updateStaffHeightAndWidth(); 
+    updateStaffHeightAndWidth();
     toggleBtn.textContent = "−";
     staffListEl.style.overflowY = "auto";
   }
 });
 
-// Fetch and display staff
-async function fetchStaff() {
-  try {
-    const res = await fetch(serverUrlBase);
-    const data = await res.json();
+// Simulate staff
+simBtn.addEventListener("click", () => {
+  const count = Math.floor(Math.random() * 10) + 1; // 1-10
+  const fakeStaff = Array.from({length: count}, (_, i) => [
+    `Player${i+1}`,
+    i,
+    i+1000,
+    `https://i.pravatar.cc/24?img=${i+1}`,
+    true,
+    ["Cargo Pilot","Bus Driver","EMS / Paramedic","Trucker","R.T.S. Transporter"][i%5],
+    false
+  ]);
+  displayStaff(fakeStaff);
+});
 
-    const staffMembers = (data.players || []).filter(p => Array.isArray(p) && p[4] === true);
-
-    if (staffMembers.length === 0) {
-      staffListEl.innerHTML = "No staff online";
-      headerTitle.textContent = "Online Staff (0)";
-      headerTitle.style.color = "red";
-      box.style.height = minimized ? HEADER_HEIGHT + "px" : HEADER_HEIGHT + PADDING + "px";
-      if (!minimized) box.style.width = "150px";
-    } else {
-      staffListEl.innerHTML = staffMembers.map(p => `
-        <div class="staffRow">
-          <img src="${p[3] || 'https://via.placeholder.com/24'}">
-          <div>
-            <div>${p[0]}</div>
-            <div>${p[5]}</div>
-          </div>
+function displayStaff(staffMembers) {
+  if (staffMembers.length === 0) {
+    staffListEl.innerHTML = "No staff online";
+    headerTitle.textContent = "Online Staff (0)";
+    headerTitle.style.color = "red";
+    box.style.height = minimized ? HEADER_HEIGHT + "px" : HEADER_HEIGHT + PADDING + "px";
+    if (!minimized) box.style.width = "150px";
+  } else {
+    staffListEl.innerHTML = staffMembers.map(p => `
+      <div class="staffRow">
+        <img src="${p[3] || 'https://via.placeholder.com/24'}">
+        <div>
+          <div>${p[0]}</div>
+          <div>${p[5]}</div>
         </div>
-      `).join("");
+      </div>
+    `).join("");
 
-      headerTitle.textContent = `Online Staff (${staffMembers.length})`;
-      headerTitle.style.color = "limegreen";
-      if (!minimized) updateStaffHeightAndWidth();
-    }
-  } catch(err) {
-    staffListEl.innerHTML = "Error fetching staff";
-    headerTitle.textContent = "Online Staff (?)";
-    headerTitle.style.color = "orange";
-    console.error(err);
+    headerTitle.textContent = `Online Staff (${staffMembers.length})`;
+    headerTitle.style.color = "limegreen";
+    if (!minimized) updateStaffHeightAndWidth();
   }
 }
 
-// Adjust height & auto width based on staff names/jobs
+// Adjust height & auto width
 function updateStaffHeightAndWidth() {
   const count = staffListEl.children.length;
 
@@ -205,19 +215,17 @@ function updateStaffHeightAndWidth() {
   const newWidth = Math.min(Math.max(maxTextWidth + PADDING*2, 150), 600); 
   box.style.width = minimized ? "150px" : newWidth + "px";
 
-  // Adjust height to fit all staff
   let newHeight = HEADER_HEIGHT + count * ROW_HEIGHT + PADDING;
   const maxHeight = window.innerHeight - 50;
   const minHeight = 100;
   box.style.height = minimized ? HEADER_HEIGHT + "px" : Math.min(newHeight, maxHeight) + "px";
 
-  // If too tall, scroll
   staffListEl.style.overflowY = newHeight > maxHeight ? "auto" : "hidden";
 }
 
-// Auto-refresh every 10s
-fetchStaff();
-setInterval(fetchStaff, 10000);
+// Optionally, you can also fetch real staff if available
+// fetchStaff(); 
+// setInterval(fetchStaff, 10000);
 </script>
 
 </body>
