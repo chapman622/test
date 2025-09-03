@@ -108,7 +108,7 @@ minMaxButton.addEventListener('click', () => {
   minimized = !minimized;
   if(minimized){
     staffWidget.style.height = HEADER_HEIGHT + 'px'; // fixed header height
-    staffWidget.style.width = '220px';  // minimum width when minimized
+    staffWidget.style.width = '220px';  // fixed width
     minMaxButton.textContent = '+';
   } else {
     minMaxButton.textContent = '-';
@@ -135,7 +135,9 @@ async function fetchStaff() {
 
     if(staffMembers.length === 0){
       staffListEl.innerHTML = "No staff online";
-      staffWidget.style.height = HEADER_HEIGHT + PADDING + "px";
+      if(!minimized){
+        staffWidget.style.height = HEADER_HEIGHT + PADDING + "px";
+      }
       headerTitle.textContent = "Online Staff (0)";
       headerTitle.style.color = "red";
     } else {
@@ -146,12 +148,14 @@ async function fetchStaff() {
           <span class="staffJob">${p[5]}</span>
         </div>
       `).join("");
-      const staffCount = staffMembers.length;
-      const newHeight = HEADER_HEIGHT + staffCount * ROW_HEIGHT + PADDING;
-      const maxHeight = window.innerHeight - 50;
-      const minHeight = HEADER_HEIGHT + PADDING;
-      staffWidget.style.height = Math.max(minHeight, Math.min(newHeight, maxHeight)) + "px";
-      headerTitle.textContent = `Online Staff (${staffCount})`;
+      if(!minimized){
+        const staffCount = staffMembers.length;
+        const newHeight = HEADER_HEIGHT + staffCount * ROW_HEIGHT + PADDING;
+        const maxHeight = window.innerHeight - 50;
+        const minHeight = HEADER_HEIGHT + PADDING;
+        staffWidget.style.height = Math.max(minHeight, Math.min(newHeight, maxHeight)) + "px";
+      }
+      headerTitle.textContent = `Online Staff (${staffMembers.length})`;
       headerTitle.style.color = "limegreen";
     }
   } catch(err) {
