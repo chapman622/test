@@ -26,7 +26,7 @@
     cursor: grab;
   }
   #staffHeader h3 { margin: 0; font-size: 16px; }
-  #toggleBtn, #refreshBtn {
+  #staffHeader button {
     padding: 3px 6px;
     cursor: pointer;
     background-color: #444;
@@ -37,11 +37,28 @@
     margin-left: 2px;
   }
   #staffList { flex: 1; overflow-y: auto; }
-  .staff-member { display: flex; align-items: center; padding: 5px; border-bottom: 1px solid #444; flex-direction: column; align-items: flex-start; }
+  .staff-member {
+    display: flex;
+    align-items: center;
+    padding: 5px;
+    border-bottom: 1px solid #444;
+    flex-direction: column;
+    align-items: flex-start;
+  }
   .staff-member:last-child { border-bottom: none; }
-  .staff-avatar { width: 32px; height: 32px; border-radius: 50%; margin-right: 10px; }
   .staff-name { font-weight: bold; }
   .staff-time { font-size: 0.8em; color: #ccc; margin-top: 2px; }
+  #settingsModal {
+    display: none;
+    position: absolute;
+    background: #333;
+    color: #fff;
+    padding: 15px;
+    border-radius: 10px;
+    box-shadow: 0 0 10px #000;
+    z-index: 10000;
+  }
+  #settingsModal input { width: 250px; }
 </style>
 </head>
 <body>
@@ -52,9 +69,17 @@
     <div>
       <button id="toggleBtn">−</button>
       <button id="refreshBtn">⟳</button>
+      <button id="settingsBtn">⚙</button>
     </div>
   </div>
   <div id="staffList">Loading...</div>
+</div>
+
+<div id="settingsModal">
+  <label for="apiKeyInput">API Key:</label><br>
+  <input type="text" id="apiKeyInput"><br><br>
+  <button id="saveKeyBtn">Save</button>
+  <button id="closeSettingsBtn">Close</button>
 </div>
 
 <script>
@@ -63,9 +88,15 @@ const sessionUrl = "https://ttycoon.eu/api/v1/serverdata/sessions";
 const staffListEl = document.getElementById("staffList");
 const refreshBtn = document.getElementById("refreshBtn");
 const toggleBtn = document.getElementById("toggleBtn");
+const settingsBtn = document.getElementById("settingsBtn");
 const box = document.getElementById("staffBox");
 const header = document.getElementById("staffHeader");
 const headerTitle = header.querySelector("h3");
+
+const settingsModal = document.getElementById("settingsModal");
+const apiKeyInput = document.getElementById("apiKeyInput");
+const saveKeyBtn = document.getElementById("saveKeyBtn");
+const closeSettingsBtn = document.getElementById("closeSettingsBtn");
 
 let collapsed = false;
 const ROW_HEIGHT = 50;
@@ -73,7 +104,7 @@ const HEADER_HEIGHT = 40;
 const PADDING = 20;
 const REFRESH_INTERVAL = 5000;
 
-// Load saved state from localStorage
+// Load saved state
 const savedState = JSON.parse(localStorage.getItem("staffBoxState") || "{}");
 box.style.left = savedState.left || "50px";
 box.style.top = savedState.top || "50px";
@@ -82,6 +113,9 @@ box.style.height = savedState.height || "400px";
 collapsed = savedState.collapsed || false;
 staffListEl.style.display = collapsed ? "none" : "block";
 toggleBtn.textContent = collapsed ? '+' : '−';
+
+// Load API key
+let API_KEY = localStorage.getItem("ttApiKey") || "";
 
 // Save state helper
 function saveState() {
@@ -104,18 +138,20 @@ function formatDuration(seconds) {
   return `${h}h ${m}m`;
 }
 
-// Fetch both staff list and session times
+// Fetch staff and sessions
 async function fetchStaff() {
   try {
     const [playersRes, sessionsRes] = await Promise.all([
       fetch(serverUrl),
-      fetch(sessionUrl)
+      fetch(sessionUrl, {
+        headers: { "X-Tycoon-Key": API_KEY }
+      })
     ]);
     const playersData = await playersRes.json();
     const sessionsData = await sessionsRes.json();
 
     const onlinePlayers = playersData.players;
-    const staffMembers = onlinePlayers.filter(p => p[4] === true); // staff flag
+    const staffMembers = onlinePlayers.filter(p => p[4] === true);
 
     if(staffMembers.length === 0) {
       staffListEl.innerHTML = "<i>No staff online</i>";
@@ -155,16 +191,27 @@ async function fetchStaff() {
 fetchStaff();
 setInterval(fetchStaff, REFRESH_INTERVAL);
 
-// Refresh button
+// Buttons
 refreshBtn.addEventListener('click', fetchStaff);
-
-// Toggle collapse/expand
 toggleBtn.addEventListener('click', () => {
   collapsed = !collapsed;
   staffListEl.style.display = collapsed ? 'none' : 'block';
   toggleBtn.textContent = collapsed ? '+' : '−';
   saveState();
 });
+
+// Settings modal
+settingsBtn.addEventListener("click", () => {
+  apiKeyInput.value = API_KEY;
+  settingsModal.style.display = "block";
+});
+saveKeyBtn.addEventListener("click", () => {
+  API_KEY = apiKeyInput.value.trim();
+  localStorage.setItem("ttApiKey", API_KEY);
+  settingsModal.style.display = "none";
+  fetchStaff();
+});
+closeSettingsBtn.addEventListener("click", () => { settingsModal.style.display = "none"; });
 
 // Draggable
 let isDragging = false, offsetX = 0, offsetY = 0;
@@ -190,5 +237,6 @@ document.addEventListener('mouseup', () => {
 box.addEventListener('mouseup', saveState);
 box.addEventListener('keyup', saveState);
 </script>
+
 </body>
 </html>
