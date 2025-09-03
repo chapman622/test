@@ -83,9 +83,7 @@
     <span id="headerTitle">Online Staff (0)</span>
     <button id="minMaxButton">-</button>
   </div>
-  <div id="staffList">
-    <!-- Staff rows go here -->
-  </div>
+  <div id="staffList"></div>
   <div id="resizeHandle"></div>
 </div>
 
@@ -120,6 +118,7 @@ document.addEventListener('mousemove', (e) => {
 // Resize functionality with min lock
 let isResizing = false;
 resizeHandle.addEventListener('mousedown', (e) => {
+  if (minimized) return; // disable resizing when minimized
   isResizing = true;
   e.preventDefault();
 });
