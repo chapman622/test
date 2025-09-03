@@ -62,6 +62,18 @@
     font-size: 18px;
     cursor: pointer;
   }
+  /* Resize handle */
+  #resizeHandle {
+    width: 15px;
+    height: 15px;
+    background: transparent;
+    border-right: 3px solid white;
+    border-bottom: 3px solid white;
+    position: absolute;
+    right: 2px;
+    bottom: 2px;
+    cursor: se-resize;
+  }
 </style>
 </head>
 <body>
@@ -74,6 +86,7 @@
   <div id="staffList">
     <!-- Staff rows go here -->
   </div>
+  <div id="resizeHandle"></div>
 </div>
 
 <script>
@@ -81,6 +94,7 @@ const staffWidget = document.getElementById('staffWidget');
 const staffListEl = document.getElementById('staffList');
 const headerTitle = document.getElementById('headerTitle');
 const minMaxButton = document.getElementById('minMaxButton');
+const resizeHandle = document.getElementById('resizeHandle');
 
 let minimized = false;
 const HEADER_HEIGHT = 50;
@@ -89,9 +103,8 @@ const PADDING = 20;
 
 // Drag functionality
 let offsetX, offsetY, isDragging = false;
-
 staffWidget.addEventListener('mousedown', (e) => {
-  if(e.target === minMaxButton) return; // ignore button
+  if(e.target === minMaxButton || e.target === resizeHandle) return; // ignore button + resizer
   isDragging = true;
   offsetX = e.clientX - staffWidget.offsetLeft;
   offsetY = e.clientY - staffWidget.offsetTop;
@@ -101,6 +114,20 @@ document.addEventListener('mousemove', (e) => {
   if(isDragging && !minimized){
     staffWidget.style.left = e.clientX - offsetX + 'px';
     staffWidget.style.top = e.clientY - offsetY + 'px';
+  }
+});
+
+// Resize functionality
+let isResizing = false;
+resizeHandle.addEventListener('mousedown', (e) => {
+  isResizing = true;
+  e.preventDefault();
+});
+document.addEventListener('mouseup', () => isResizing = false);
+document.addEventListener('mousemove', (e) => {
+  if (isResizing && !minimized) {
+    staffWidget.style.width = (e.clientX - staffWidget.offsetLeft) + 'px';
+    staffWidget.style.height = (e.clientY - staffWidget.offsetTop) + 'px';
   }
 });
 
