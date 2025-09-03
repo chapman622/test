@@ -1,19 +1,66 @@
+<div id="staffBox">
+  <div id="headerTitle">Online Staff (0)</div>
+  <div id="staffList"></div>
+</div>
+
+<style>
+#staffBox {
+  width: 250px;
+  min-height: 100px;
+  max-height: 80vh;
+  background: #222;
+  color: #fff;
+  border: 2px solid #555;
+  padding: 5px;
+  overflow-y: auto;
+  resize: both;
+}
+.staff-member {
+  display: flex;
+  align-items: center;
+  margin: 2px 0;
+}
+.staff-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  margin-right: 5px;
+}
+.staff-info {
+  display: flex;
+  flex-direction: column;
+}
+.staff-name {
+  font-weight: bold;
+}
+.staff-job {
+  font-size: 0.85em;
+  color: #ccc;
+}
+</style>
+
+<script>
+const serverUrlBase = "https://tycoon-2epova.users.cfx.re/status/widget/players.json";
+const staffListEl = document.getElementById("staffList");
+const headerTitle = document.getElementById("headerTitle");
+const box = document.getElementById("staffBox");
+
+const HEADER_HEIGHT = 30; // adjust if needed
+const ROW_HEIGHT = 40;     // height of one staff row
+const PADDING = 10;
+
 async function fetchStaff() {
   try {
     const serverUrl = serverUrlBase + "?v=" + Date.now(); // bypass cache
     const res = await fetch(serverUrl);
     const data = await res.json();
 
-    // Debug: log all players and staff flag
+    // Debug log all players
     console.log("Players fetched:");
-    (data.players || []).forEach(p => {
-      console.log(`${p[0]} → staff: ${p[4]}`);
-    });
+    (data.players || []).forEach(p => console.log(`${p[0]} → staff: ${p[4]}`));
 
-    // Safe filter for staff
-    const staffMembers = (data.players || []).filter(
-      p => Array.isArray(p) && p[4] === true
-    );
+    // Filter staff
+    const staffMembers = (data.players || []).filter(p => Array.isArray(p) && p[4] === true);
 
     if (staffMembers.length === 0) {
       staffListEl.innerHTML = "<i>No staff online</i>";
@@ -23,10 +70,10 @@ async function fetchStaff() {
     } else {
       staffListEl.innerHTML = staffMembers.map(p => `
         <div class="staff-member">
-          <img src="${p[3]}" alt="avatar">
-          <div>
+          <img src="${p[3] || ''}" alt="avatar" class="staff-avatar">
+          <div class="staff-info">
             <div class="staff-name">${p[0]}</div>
-            <div class="staff-job">${p[5]}</div>
+            <div class="staff-job">${p[5] || ''}</div>
           </div>
         </div>
       `).join("");
@@ -40,7 +87,6 @@ async function fetchStaff() {
       headerTitle.textContent = `Online Staff (${staffCount})`;
       headerTitle.style.color = "limegreen";
     }
-
   } catch(err) {
     staffListEl.innerHTML = "<i>Error fetching staff</i>";
     console.error(err);
@@ -48,3 +94,8 @@ async function fetchStaff() {
     headerTitle.style.color = "orange";
   }
 }
+
+// Initial fetch + repeat every 10 seconds
+fetchStaff();
+setInterval(fetchStaff, 10000);
+</script>
