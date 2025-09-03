@@ -31,7 +31,7 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      font-weight: bold;
+      font-weight: normal; /* count not bold */
     }
 
     #staffList {
@@ -50,6 +50,17 @@
       height: 24px;
       border-radius: 50%;
       margin-right: 5px;
+    }
+
+    /* Player name bold, job normal */
+    .staffRow div div:first-child {
+      font-weight: bold;
+    }
+
+    .staffRow div div:last-child {
+      font-weight: normal;
+      color: #ccc;
+      font-size: 0.8em;
     }
 
     #toggleBtn {
@@ -84,7 +95,7 @@ let dragOffsetY = 0;
 let dragging = false;
 let resizing = false;
 
-const serverUrlBase = "https://tycoon-2epova.users.cfx.re/status/widget/players.json"; // live server URL
+const serverUrlBase = "https://tycoon-2epova.users.cfx.re/status/widget/players.json"; 
 const HEADER_HEIGHT = 35;
 const PADDING = 10;
 const ROW_HEIGHT = 30;
@@ -120,7 +131,7 @@ toggleBtn.addEventListener("click", () => {
     box.style.width = "150px";
     toggleBtn.textContent = "+";
   } else {
-    updateStaffHeight(); // recalc height/width based on staff
+    updateStaffHeight(); 
     toggleBtn.textContent = "−";
   }
 });
@@ -145,7 +156,7 @@ async function fetchStaff() {
           <img src="${p[3] || 'https://via.placeholder.com/24'}">
           <div>
             <div>${p[0]}</div>
-            <div style="font-size:0.8em;color:#ccc">${p[5]}</div>
+            <div>${p[5]}</div>
           </div>
         </div>
       `).join("");
@@ -175,7 +186,7 @@ function updateStaffHeight(staffCount) {
     if (textWidth > maxTextWidth) maxTextWidth = textWidth;
   });
 
-  const newWidth = Math.min(Math.max(maxTextWidth + PADDING*2, 150), 600); // min 150, max 600
+  const newWidth = Math.min(Math.max(maxTextWidth + PADDING*2, 150), 600); 
   box.style.width = minimized ? "150px" : newWidth + "px";
 
   const newHeight = HEADER_HEIGHT + count * ROW_HEIGHT + PADDING;
