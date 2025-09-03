@@ -2,178 +2,197 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Staff Widget</title>
+<title>Transport Tycoon Staff Widget</title>
 <style>
-  body {
-    background: white; /* webpage background */
-    margin: 0;
-    font-family: sans-serif;
-  }
-  #staffWidget {
-    position: absolute;
-    top: 50px;
-    left: 50px;
-    background: #222;
-    color: white;
-    border-radius: 12px;
-    overflow: hidden;
-    width: 250px;
-    min-height: 50px;
-  }
-  #header {
-    background: #444;
-    padding: 10px;
-    display: flex;
-    justify-content: space-between;
-    cursor: move;
-  }
-  #headerTitle {
-    font-weight: bold;
-  }
-  #headerButtons button {
-    margin-left: 5px;
-    background: #444;
-    border: none;
-    color: white;
-    padding: 2px 8px;
-    cursor: pointer;
-  }
-  #staffList {
-    overflow-y: auto;
-    max-height: 400px;
-  }
-  .staffRow {
-    display: flex;
-    align-items: center;
-    padding: 5px;
-  }
-  .staffAvatar {
-    width: 30px;
-    height: 30px;
-    border-radius: 50%;
-    margin-right: 8px;
-  }
-  .staffName {
-    font-weight: bold;
-    margin-right: 5px;
-    color: white;
-  }
-  .staffJob {
-    font-size: 0.9em;
-    color: white;
-  }
+body {
+  background: transparent;
+  margin: 0;
+  font-family: sans-serif;
+}
+
+#staffWidget {
+  position: absolute;
+  top: 50px;
+  left: 50px;
+  background: #222;
+  color: white;
+  border-radius: 12px;
+  overflow: hidden;
+  width: 250px;
+  min-height: 50px;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  resize: both;
+}
+
+#staffHeader {
+  background: #111;
+  cursor: move;
+  padding: 8px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  user-select: none;
+}
+
+#headerTitle {
+  font-weight: bold;
+}
+
+#headerButtons {
+  display: flex;
+  gap: 4px;
+}
+
+.headerBtn {
+  background: #333;
+  border: none;
+  color: white;
+  padding: 2px 6px;
+  cursor: pointer;
+  border-radius: 4px;
+}
+
+#staffList {
+  padding: 8px;
+  overflow-y: auto;
+  flex-grow: 1;
+}
+
+.staffRow {
+  display: flex;
+  align-items: center;
+  margin-bottom: 4px;
+}
+
+.staffAvatar {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  margin-right: 6px;
+}
+
+.staffName {
+  font-weight: bold;
+  margin-right: 6px;
+}
+
+.staffJob {
+  font-weight: normal;
+  color: #ddd;
+}
 </style>
 </head>
 <body>
 <div id="staffWidget">
-  <div id="header">
-    <span id="headerTitle">Online Staff (0)</span>
+  <div id="staffHeader">
+    <div id="headerTitle">Online Staff (0)</div>
     <div id="headerButtons">
-      <button id="simToggleBtn">Sim</button>
-      <button id="minimizeBtn">−</button>
+      <button id="toggleMinBtn" class="headerBtn">−</button>
+      <button id="simBtn" class="headerBtn">Sim</button>
     </div>
   </div>
   <div id="staffList"></div>
 </div>
 
 <script>
-const box = document.getElementById("staffWidget");
-const header = document.getElementById("header");
-const headerTitle = document.getElementById("headerTitle");
-const staffListEl = document.getElementById("staffList");
-const simToggleBtn = document.getElementById("simToggleBtn");
-const minimizeBtn = document.getElementById("minimizeBtn");
+const box = document.getElementById('staffWidget');
+const header = document.getElementById('staffHeader');
+const staffListEl = document.getElementById('staffList');
+const headerTitle = document.getElementById('headerTitle');
+const toggleMinBtn = document.getElementById('toggleMinBtn');
+const simBtn = document.getElementById('simBtn');
 
-let simActive = false;
-let minimized = false;
-let serverUrlBase = "https://tycoon-2epova.users.cfx.re/status/widget/players.json";
+let isMinimized = false;
+let simEnabled = false;
+let staffData = [];
 
-simToggleBtn.addEventListener("click", () => {
-  simActive = !simActive;
-  simToggleBtn.style.background = simActive ? "limegreen" : "#444";
-  fetchStaff();
+const serverUrl = 'https://tycoon-2epova.users.cfx.re/status/widget/players.json';
+
+// Dragging logic
+let offsetX, offsetY, isDragging = false;
+header.addEventListener('mousedown', e => {
+  isDragging = true;
+  offsetX = e.clientX - box.offsetLeft;
+  offsetY = e.clientY - box.offsetTop;
+});
+document.addEventListener('mouseup', () => isDragging = false);
+document.addEventListener('mousemove', e => {
+  if(isDragging) {
+    box.style.left = (e.clientX - offsetX) + 'px';
+    box.style.top = (e.clientY - offsetY) + 'px';
+  }
 });
 
-minimizeBtn.addEventListener("click", () => {
-  minimized = !minimized;
-  if(minimized){
-    staffListEl.style.display = "none";
-    box.style.height = header.offsetHeight + "px";
-    minimizeBtn.textContent = "+";
-    simToggleBtn.style.display = "none";
+// Minimize toggle
+toggleMinBtn.addEventListener('click', () => {
+  isMinimized = !isMinimized;
+  if(isMinimized){
+    staffListEl.style.display = 'none';
+    box.style.height = header.offsetHeight + 'px';
+    toggleMinBtn.textContent = '+';
   } else {
-    staffListEl.style.display = "block";
-    fetchStaff();
-    minimizeBtn.textContent = "−";
-    simToggleBtn.style.display = "inline-block";
+    staffListEl.style.display = 'block';
+    toggleMinBtn.textContent = '−';
+    renderStaff();
   }
 });
 
-// Drag from anywhere
-let isDragging = false, offsetX, offsetY;
-box.addEventListener("mousedown", e => {
-  if (e.target.tagName !== "BUTTON") {
-    isDragging = true;
-    offsetX = e.clientX - box.offsetLeft;
-    offsetY = e.clientY - box.offsetTop;
-  }
-});
-document.addEventListener("mouseup", () => isDragging = false);
-document.addEventListener("mousemove", e => {
-  if (isDragging && !minimized) {
-    box.style.left = (e.clientX - offsetX) + "px";
-    box.style.top = (e.clientY - offsetY) + "px";
-  }
+// Sim staff toggle
+simBtn.addEventListener('click', () => {
+  simEnabled = !simEnabled;
+  renderStaff();
 });
 
+// Fetch staff data
 async function fetchStaff() {
   try {
-    let data = await fetch(serverUrlBase).then(r => r.json());
-    let players = data.players || [];
-    let realStaff = players.filter(p => p[4] === true);
-    let displayStaff = [...realStaff];
-
-    if (simActive) {
-      let simCount = Math.floor(Math.random() * 20) + 1;
-      for (let i = 0; i < simCount; i++) {
-        displayStaff.push(["SimStaff"+(i+1), 0, 0, "", true, "SimJob", false]);
-      }
-    }
-
-    if (displayStaff.length === 0) {
-      staffListEl.innerHTML = "No staff online";
-      headerTitle.textContent = "Online Staff (0)";
-      headerTitle.style.color = "red";
-      box.style.height = header.offsetHeight + "px";
-    } else {
-      staffListEl.innerHTML = displayStaff.map(p => `
-        <div class="staffRow">
-          <img class="staffAvatar" src="${p[3] || 'https://via.placeholder.com/30'}">
-          <span class="staffName">${p[0]}</span>
-          <span class="staffJob">${p[5]}</span>
-        </div>
-      `).join("");
-      headerTitle.textContent = `Online Staff (${displayStaff.length})`;
-      headerTitle.style.color = "limegreen";
-
-      if (!minimized) {
-        const ROW_HEIGHT = 45;
-        const PADDING = 20;
-        const newHeight = header.offsetHeight + displayStaff.length * ROW_HEIGHT + PADDING;
-        const maxHeight = window.innerHeight - 50;
-        box.style.height = Math.min(newHeight, maxHeight) + "px";
-      }
-    }
+    const res = await fetch(serverUrl);
+    const data = await res.json();
+    staffData = data.players.filter(p => Array.isArray(p) && p[4] === true);
+    renderStaff();
   } catch(err) {
     staffListEl.innerHTML = "Error fetching staff";
+    console.error(err);
     headerTitle.textContent = "Online Staff (?)";
     headerTitle.style.color = "orange";
-    console.error(err);
   }
 }
 
-// Auto refresh every 10s
+// Render staff list
+function renderStaff() {
+  let displayStaff = [...staffData];
+  if(simEnabled){
+    const simCount = Math.floor(Math.random()*20);
+    for(let i=0;i<simCount;i++){
+      displayStaff.push(["SimStaff"+(i+1),0,0,"https://via.placeholder.com/24",true,"Job"]);
+    }
+  }
+
+  if(displayStaff.length === 0){
+    staffListEl.innerHTML = "No staff online";
+    headerTitle.textContent = "Online Staff (0)";
+    headerTitle.style.color = "red";
+  } else {
+    staffListEl.innerHTML = displayStaff.map(p => `
+      <div class="staffRow">
+        <img src="${p[3] || 'https://via.placeholder.com/24'}" class="staffAvatar">
+        <div class="staffName">${p[0]}</div>
+        <div class="staffJob">${p[5]}</div>
+      </div>
+    `).join('');
+    headerTitle.textContent = `Online Staff (${displayStaff.length})`;
+    headerTitle.style.color = "limegreen";
+  }
+
+  if(!isMinimized){
+    const newHeight = header.offsetHeight + displayStaff.length*34 + 16; // 34px per row + padding
+    box.style.height = Math.min(newHeight, window.innerHeight*0.8)+'px';
+  }
+}
+
+// Auto-refresh every 10s
 setInterval(fetchStaff, 10000);
 fetchStaff();
 </script>
