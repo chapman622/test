@@ -4,13 +4,7 @@
   <meta charset="UTF-8">
   <title>Transport Tycoon Staff Widget</title>
   <style>
-    body {
-      margin: 0;
-      font-family: Arial, sans-serif;
-      background: #121212;
-      color: white;
-    }
-
+    /* Only the widget is styled */
     #staffWidget {
       position: absolute;
       top: 50px;
@@ -27,6 +21,7 @@
       flex-direction: column;
       user-select: none;
       resize: both;
+      z-index: 9999;
     }
 
     #staffHeader {
