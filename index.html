@@ -32,7 +32,6 @@
   #staffHeader h3 { 
     margin: 0; 
     font-size: 16px; 
-    color: red;
   }
   #toggleBtn, #refreshBtn, #simulateBtn {
     padding: 3px 6px;
@@ -83,6 +82,7 @@ const toggleBtn = document.getElementById("toggleBtn");
 const simulateBtn = document.getElementById("simulateBtn");
 const box = document.getElementById("staffBox");
 const header = document.getElementById("staffHeader");
+const headerTitle = header.querySelector("h3");
 
 let collapsed = false;
 let simulate = false;
@@ -95,7 +95,7 @@ const PADDING = 20;
 simulateBtn.addEventListener('click', () => {
   simulate = !simulate;
   simulateBtn.textContent = simulate ? "Simulation ON" : "Simulate Staff";
-  fetchStaff(); // refresh immediately
+  fetchStaff();
 });
 
 // Fetch staff (real or simulated)
@@ -104,7 +104,6 @@ async function fetchStaff() {
     let onlinePlayers;
     
     if(simulate) {
-      // Generate random fake staff 0-5
       onlinePlayers = Array.from({length: Math.floor(Math.random()*6)}, (_, i) => [
         `Staff${i+1}`, 100+i, 1000+i, null, true, 'Job Role', Math.random() < 0.5
       ]);
@@ -119,25 +118,30 @@ async function fetchStaff() {
     if(staffMembers.length === 0) {
       staffListEl.innerHTML = "<i>No staff online</i>";
       box.style.height = HEADER_HEIGHT + PADDING + "px";
-      return;
+      headerTitle.textContent = "Online Staff (0)";
+      headerTitle.style.color = "red";
+    } else {
+      staffListEl.innerHTML = staffMembers.map(p => `
+        <div class="staff-member ${p[6] ? 'donator' : ''}">
+          ${p[3] ? `<img src="${p[3]}" class="staff-avatar" />` : ''}
+          ${p[0]} - ${p[5]} ${p[6] ? '(Donator)' : ''}
+        </div>
+      `).join("");
+
+      let newHeight = HEADER_HEIGHT + staffMembers.length * ROW_HEIGHT + PADDING;
+      newHeight = Math.min(newHeight, window.innerHeight - 50);
+      newHeight = Math.max(newHeight, 100);
+      box.style.height = newHeight + "px";
+
+      headerTitle.textContent = `Online Staff (${staffMembers.length})`;
+      headerTitle.style.color = "limegreen";
     }
-
-    staffListEl.innerHTML = staffMembers.map(p => `
-      <div class="staff-member ${p[6] ? 'donator' : ''}">
-        ${p[3] ? `<img src="${p[3]}" class="staff-avatar" />` : ''}
-        ${p[0]} - ${p[5]} ${p[6] ? '(Donator)' : ''}
-      </div>
-    `).join("");
-
-    // Dynamically adjust box height
-    let newHeight = HEADER_HEIGHT + staffMembers.length * ROW_HEIGHT + PADDING;
-    newHeight = Math.min(newHeight, window.innerHeight - 50);
-    newHeight = Math.max(newHeight, 100);
-    box.style.height = newHeight + "px";
 
   } catch(err) {
     staffListEl.innerHTML = "<i>Error fetching staff</i>";
     console.error(err);
+    headerTitle.textContent = "Online Staff (?)";
+    headerTitle.style.color = "orange";
   }
 }
 
