@@ -107,7 +107,7 @@ if(savedSize.height) box.style.height = savedSize.height;
 // Dragging
 let isDragging = false, offsetX, offsetY;
 box.addEventListener('mousedown', e => {
-    if(e.target === resizeHandle) return; // exclude resize handle
+    if(e.target === resizeHandle) return;
     isDragging = true;
     offsetX = e.clientX - box.offsetLeft;
     offsetY = e.clientY - box.offsetTop;
@@ -146,24 +146,30 @@ document.addEventListener('mouseup', () => {
     isResizing = false;
 });
 
-// Min/Max button
+// Min/Max button updated to minimize to header only
 let minimized = false;
 minMaxBtn.addEventListener('click', () => {
     minimized = !minimized;
-    staffListEl.style.display = minimized ? 'none' : 'block';
-    resizeHandle.style.display = minimized ? 'none' : 'block';
+    if(minimized){
+        staffListEl.style.display = 'none';
+        resizeHandle.style.display = 'none';
+        box.style.height = HEADER_HEIGHT + 'px';
+    } else {
+        staffListEl.style.display = 'block';
+        resizeHandle.style.display = 'block';
+        const staffCount = staffListEl.children.length;
+        const newHeight = HEADER_HEIGHT + staffCount*ROW_HEIGHT + PADDING;
+        box.style.height = Math.min(newHeight, window.innerHeight-50)+'px';
+    }
 });
 
 // Sim button
 simBtn.addEventListener('click', () => {
-    // random 1-10 staff
     const n = Math.floor(Math.random()*10)+1;
     staffListEl.innerHTML = '';
-    const arr = [];
     for(let i=0;i<n;i++){
         const name = 'Staff'+(i+1);
         const job = 'Job'+(i+1);
-        arr.push({name, job});
         const div = document.createElement('div');
         div.className = 'staff-member';
         div.innerHTML = `<div class="staff-info"><span>${name}</span><span>${job}</span></div>`;
