@@ -154,7 +154,7 @@ document.onmousemove = e => {
 document.onmouseup = () => {
   if(isDragging) {
     isDragging = false;
-    // Save position/size
+    // Save position and size
     localStorage.setItem("staffBoxPos", JSON.stringify({
       top: box.style.top,
       left: box.style.left,
