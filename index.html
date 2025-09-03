@@ -2,148 +2,204 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Staff Widget</title>
+<title>Transport Tycoon Staff Widget</title>
 <style>
-#staffWidget {
-    position: fixed;
+  body { margin:0; font-family:sans-serif; }
+  #staffWidget {
+    position: absolute;
     top: 50px;
     left: 50px;
-    width: 250px;
-    height: 200px;
-    background: #222;
-    color: white;
-    font-family: sans-serif;
-    border: 1px solid #444;
+    width: 300px;
+    min-width: 200px;
+    min-height: 100px;
+    background: #1e1e1e;
+    border-radius: 12px; /* Rounded corners */
+    color: #fff;
+    overflow: hidden;
     user-select: none;
     z-index: 9999;
-    display: flex;
-    flex-direction: column;
-    resize: both;
-    overflow: hidden;
-}
-#staffWidgetHeader {
+  }
+  #staffHeader {
     background: #333;
-    padding: 5px;
+    padding: 8px;
     cursor: move;
     display: flex;
     justify-content: space-between;
     align-items: center;
-}
-#staffWidgetHeader span {
-    font-weight: bold;
-}
-#staffList {
-    padding: 5px;
+    border-top-left-radius:12px;
+    border-top-right-radius:12px;
+  }
+  #staffHeader span { font-weight: bold; }
+  #staffButtons button {
+    background: #555;
+    border: none;
+    color: #fff;
+    padding: 4px 8px;
+    margin-left: 4px;
+    border-radius: 6px;
+    cursor: pointer;
+  }
+  #staffList {
+    padding: 8px;
     overflow-y: auto;
-    flex: 1;
-}
-.staff-member {
+  }
+  .staff-member {
     display: flex;
     align-items: center;
-    margin-bottom: 3px;
-}
-.staff-avatar {
+    margin-bottom: 4px;
+  }
+  .staff-avatar {
     width: 24px;
     height: 24px;
     border-radius: 50%;
-    margin-right: 5px;
-}
-.staff-info {
-    display: flex;
-    flex-direction: column;
-    font-size: 12px;
-}
-button {
-    background: #444;
-    border: none;
-    color: white;
-    padding: 2px 6px;
-    cursor: pointer;
-}
+    margin-right: 6px;
+  }
+  .staff-info span {
+    display: block;
+  }
+  /* Resize handle */
+  #resizeHandle {
+    position: absolute;
+    width: 12px;
+    height: 12px;
+    bottom: 2px;
+    right: 2px;
+    cursor: se-resize;
+    background: #888;
+    border-radius: 50%;
+  }
 </style>
 </head>
 <body>
-
 <div id="staffWidget">
-    <div id="staffWidgetHeader">
-        <span id="headerTitle">Online Staff (0)</span>
-        <div>
-            <button id="simBtn">Sim</button>
-            <button id="minMaxBtn">–</button>
-        </div>
+  <div id="staffHeader">
+    <span id="headerTitle">Online Staff (0)</span>
+    <div id="staffButtons">
+      <button id="simBtn">Sim</button>
+      <button id="minMaxBtn">_</button>
     </div>
-    <div id="staffList"></div>
+  </div>
+  <div id="staffList"></div>
+  <div id="resizeHandle"></div>
 </div>
 
 <script>
-const serverUrlBase = "https://tycoon-2epova.users.cfx.re/status/widget/players.json";
-const staffListEl = document.getElementById("staffList");
-const headerTitle = document.getElementById("headerTitle");
-const box = document.getElementById("staffWidget");
-const simBtn = document.getElementById("simBtn");
-const minMaxBtn = document.getElementById("minMaxBtn");
+const box = document.getElementById('staffWidget');
+const header = document.getElementById('staffHeader');
+const staffListEl = document.getElementById('staffList');
+const headerTitle = document.getElementById('headerTitle');
+const simBtn = document.getElementById('simBtn');
+const minMaxBtn = document.getElementById('minMaxBtn');
+const resizeHandle = document.getElementById('resizeHandle');
 
-let simEnabled = false;
+const ROW_HEIGHT = 32;
+const HEADER_HEIGHT = 36;
+const PADDING = 16;
+
+// Load position & size
+const savedPos = JSON.parse(localStorage.getItem("staffWidgetPos")||"{}");
+const savedSize = JSON.parse(localStorage.getItem("staffWidgetSize")||"{}");
+if(savedPos.top) box.style.top = savedPos.top;
+if(savedPos.left) box.style.left = savedPos.left;
+if(savedSize.width) box.style.width = savedSize.width;
+if(savedSize.height) box.style.height = savedSize.height;
+
+// Dragging
+let isDragging = false, offsetX, offsetY;
+box.addEventListener('mousedown', e => {
+    if(e.target === resizeHandle) return; // exclude resize handle
+    isDragging = true;
+    offsetX = e.clientX - box.offsetLeft;
+    offsetY = e.clientY - box.offsetTop;
+});
+document.addEventListener('mousemove', e => {
+    if(isDragging){
+        box.style.left = (e.clientX - offsetX) + 'px';
+        box.style.top = (e.clientY - offsetY) + 'px';
+    }
+});
+document.addEventListener('mouseup', () => {
+    if(isDragging){
+        localStorage.setItem("staffWidgetPos", JSON.stringify({top: box.style.top, left: box.style.left}));
+    }
+    isDragging = false;
+});
+
+// Resizing
+let isResizing = false;
+resizeHandle.addEventListener('mousedown', e => {
+    e.stopPropagation();
+    isResizing = true;
+});
+document.addEventListener('mousemove', e => {
+    if(isResizing){
+        const newWidth = e.clientX - box.offsetLeft;
+        const newHeight = e.clientY - box.offsetTop;
+        box.style.width = Math.max(200,newWidth)+'px';
+        box.style.height = Math.max(100,newHeight)+'px';
+    }
+});
+document.addEventListener('mouseup', () => {
+    if(isResizing){
+        localStorage.setItem("staffWidgetSize", JSON.stringify({width: box.style.width, height: box.style.height}));
+    }
+    isResizing = false;
+});
+
+// Min/Max button
 let minimized = false;
-
-// Load persisted position & size
-const storedPos = JSON.parse(localStorage.getItem("staffWidgetPos")) || {};
-const storedSize = JSON.parse(localStorage.getItem("staffWidgetSize")) || {};
-if(storedPos.top) box.style.top = storedPos.top;
-if(storedPos.left) box.style.left = storedPos.left;
-if(storedSize.width) box.style.width = storedSize.width;
-if(storedSize.height) box.style.height = storedSize.height;
-
-simBtn.addEventListener("click", () => {
-    simEnabled = !simEnabled;
-    simBtn.textContent = simEnabled ? "Sim ON" : "Sim";
-    fetchStaff();
-});
-
-minMaxBtn.addEventListener("click", () => {
+minMaxBtn.addEventListener('click', () => {
     minimized = !minimized;
-    staffListEl.style.display = minimized ? "none" : "block";
-    minMaxBtn.textContent = minimized ? "+" : "–";
+    staffListEl.style.display = minimized ? 'none' : 'block';
+    resizeHandle.style.display = minimized ? 'none' : 'block';
 });
 
+// Sim button
+simBtn.addEventListener('click', () => {
+    // random 1-10 staff
+    const n = Math.floor(Math.random()*10)+1;
+    staffListEl.innerHTML = '';
+    const arr = [];
+    for(let i=0;i<n;i++){
+        const name = 'Staff'+(i+1);
+        const job = 'Job'+(i+1);
+        arr.push({name, job});
+        const div = document.createElement('div');
+        div.className = 'staff-member';
+        div.innerHTML = `<div class="staff-info"><span>${name}</span><span>${job}</span></div>`;
+        staffListEl.appendChild(div);
+    }
+    headerTitle.textContent = `Online Staff (${n})`;
+    headerTitle.style.color = n>0?'limegreen':'red';
+    const newHeight = HEADER_HEIGHT + n*ROW_HEIGHT + PADDING;
+    box.style.height = newHeight+'px';
+});
+
+// Fetch staff from JSON (example)
 async function fetchStaff() {
     try {
+        const serverUrlBase = 'https://tycoon-2epova.users.cfx.re/status/widget/players.json';
         const res = await fetch(serverUrlBase);
-        let data = await res.json();
-
-        if(simEnabled){
-            const simCount = Math.floor(Math.random() * 10) + 1;
-            data.players = [];
-            for(let i=0;i<simCount;i++){
-                data.players.push([`Sim${i+1}`, i, 1000+i, "", true, "Job", false]);
-            }
-        }
-
-        const staffMembers = (data.players || []).filter(p => Array.isArray(p) && p[4] === true);
-
+        const data = await res.json();
+        const staffMembers = (data.players||[]).filter(p=>p[4]===true);
         if(staffMembers.length === 0){
             staffListEl.innerHTML = "No staff online";
             headerTitle.textContent = "Online Staff (0)";
             headerTitle.style.color = "red";
+            box.style.height = HEADER_HEIGHT + PADDING + 'px';
         } else {
-            staffListEl.innerHTML = staffMembers.map(p => `
+            staffListEl.innerHTML = staffMembers.map(p=>`
                 <div class="staff-member">
-                    <img class="staff-avatar" src="${p[3] || 'https://via.placeholder.com/24'}">
-                    <div class="staff-info">
-                        <span>${p[0]}</span>
-                        <span>${p[5]}</span>
-                    </div>
+                    <img class="staff-avatar" src="${p[3]||'https://via.placeholder.com/24'}">
+                    <div class="staff-info"><span>${p[0]}</span><span>${p[5]}</span></div>
                 </div>
-            `).join("");
-
+            `).join('');
             headerTitle.textContent = `Online Staff (${staffMembers.length})`;
             headerTitle.style.color = "limegreen";
-
-            // Auto width based on longest name
-            const maxNameLength = Math.max(...staffMembers.map(p => p[0].length));
-            box.style.width = Math.max(200, maxNameLength * 10) + "px";
+            const newHeight = HEADER_HEIGHT + staffMembers.length*ROW_HEIGHT + PADDING;
+            box.style.height = Math.min(newHeight, window.innerHeight-50)+'px';
         }
-    } catch(err) {
+    } catch(err){
         staffListEl.innerHTML = "Error fetching staff";
         headerTitle.textContent = "Online Staff (?)";
         headerTitle.style.color = "orange";
@@ -151,36 +207,9 @@ async function fetchStaff() {
     }
 }
 
-// Drag from anywhere
-let offsetX, offsetY, isDragging = false;
-box.addEventListener("mousedown", e => {
-    if(e.target === minMaxBtn || e.target === simBtn) return;
-    isDragging = true;
-    offsetX = e.clientX - box.offsetLeft;
-    offsetY = e.clientY - box.offsetTop;
-});
-document.addEventListener("mousemove", e => {
-    if(isDragging){
-        box.style.left = (e.clientX - offsetX) + "px";
-        box.style.top = (e.clientY - offsetY) + "px";
-    }
-});
-document.addEventListener("mouseup", () => {
-    if(isDragging){
-        localStorage.setItem("staffWidgetPos", JSON.stringify({top: box.style.top, left: box.style.left}));
-    }
-    isDragging = false;
-});
-
-// Save size after resize
-box.addEventListener("mouseup", () => {
-    localStorage.setItem("staffWidgetSize", JSON.stringify({width: box.style.width, height: box.style.height}));
-});
-
-// Auto refresh every 10 seconds
-setInterval(fetchStaff, 10000);
+// Auto-refresh every 10 seconds
 fetchStaff();
+setInterval(fetchStaff, 10000);
 </script>
-
 </body>
 </html>
