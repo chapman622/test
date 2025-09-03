@@ -1,11 +1,16 @@
 <div id="staffBox">
-  <div id="headerTitle">Online Staff (0)</div>
+  <div id="headerBar">
+    <span id="headerTitle">Online Staff (0)</span>
+    <button id="refreshBtn">Refresh</button>
+    <button id="simBtn">Sim</button>
+    <button id="settingsBtn">Settings</button>
+  </div>
   <div id="staffList"></div>
 </div>
 
 <style>
 #staffBox {
-  width: 250px;
+  width: 300px;
   min-height: 100px;
   max-height: 80vh;
   background: #222;
@@ -14,7 +19,23 @@
   padding: 5px;
   overflow-y: auto;
   resize: both;
+  font-family: sans-serif;
 }
+#headerBar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 5px;
+}
+button {
+  background: #555;
+  color: #fff;
+  border: none;
+  padding: 2px 6px;
+  margin-left: 2px;
+  cursor: pointer;
+}
+button:hover { background: #777; }
 .staff-member {
   display: flex;
   align-items: center;
@@ -45,22 +66,27 @@ const staffListEl = document.getElementById("staffList");
 const headerTitle = document.getElementById("headerTitle");
 const box = document.getElementById("staffBox");
 
-const HEADER_HEIGHT = 30; // adjust if needed
-const ROW_HEIGHT = 40;     // height of one staff row
+const HEADER_HEIGHT = 30;
+const ROW_HEIGHT = 40;
 const PADDING = 10;
+
+let simulate = false; // toggle simulation
 
 async function fetchStaff() {
   try {
-    const serverUrl = serverUrlBase + "?v=" + Date.now(); // bypass cache
+    const serverUrl = serverUrlBase + "?v=" + Date.now();
     const res = await fetch(serverUrl);
     const data = await res.json();
 
-    // Debug log all players
     console.log("Players fetched:");
     (data.players || []).forEach(p => console.log(`${p[0]} → staff: ${p[4]}`));
 
-    // Filter staff
-    const staffMembers = (data.players || []).filter(p => Array.isArray(p) && p[4] === true);
+    let staffMembers = (data.players || []).filter(p => Array.isArray(p) && p[4] === true);
+
+    if (simulate) {
+      // Add a fake staff for testing
+      staffMembers.push(["SimStaff", 0, 0, "", true, "Simulated Staff", false]);
+    }
 
     if (staffMembers.length === 0) {
       staffListEl.innerHTML = "<i>No staff online</i>";
@@ -87,6 +113,7 @@ async function fetchStaff() {
       headerTitle.textContent = `Online Staff (${staffCount})`;
       headerTitle.style.color = "limegreen";
     }
+
   } catch(err) {
     staffListEl.innerHTML = "<i>Error fetching staff</i>";
     console.error(err);
@@ -94,6 +121,14 @@ async function fetchStaff() {
     headerTitle.style.color = "orange";
   }
 }
+
+// Button functionality
+document.getElementById("refreshBtn").onclick = fetchStaff;
+document.getElementById("simBtn").onclick = () => {
+  simulate = !simulate;
+  fetchStaff();
+};
+document.getElementById("settingsBtn").onclick = () => alert("Settings button clicked!");
 
 // Initial fetch + repeat every 10 seconds
 fetchStaff();
