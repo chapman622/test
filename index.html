@@ -127,18 +127,14 @@ async function fetchStaff() {
       const simCount = Math.floor(Math.random() * 10) + 1; // 1–10 random staff
       for(let i = 1; i <= simCount; i++) {
         staffMembers.push([
-          `SimStaff${i}`, // name
-          0,              // source ID
-          0,              // vRP id
-          "",             // avatar
-          true,           // staff
-          "Simulated Staff", // job
-          false           // donator
+          `SimStaff${i}`, 0, 0, "", true, "Simulated Staff", false
         ]);
       }
     }
 
-    if(staffMembers.length === 0) {
+    const staffCount = staffMembers.length;
+
+    if(staffCount === 0) {
       staffListEl.innerHTML = "<i>No staff online</i>";
       box.style.height = minimized ? HEADER_HEIGHT + "px" : HEADER_HEIGHT + PADDING + "px";
       headerTitle.textContent = "Online Staff (0)";
@@ -146,7 +142,7 @@ async function fetchStaff() {
     } else {
       staffListEl.innerHTML = staffMembers.map(p => `
         <div class="staff-member">
-          <img src="${p[3] || ''}" alt="avatar" class="staff-avatar">
+          <img src="${p[3] || ''}" class="staff-avatar">
           <div class="staff-info">
             <div class="staff-name">${p[0]}</div>
             <div class="staff-job">${p[5] || ''}</div>
@@ -154,11 +150,10 @@ async function fetchStaff() {
         </div>
       `).join("");
 
-      const staffCount = staffMembers.length;
-      const newHeight = HEADER_HEIGHT + staffCount * ROW_HEIGHT + PADDING;
+      // Dynamic height logic
+      const fullHeight = HEADER_HEIGHT + staffCount * ROW_HEIGHT + PADDING;
       const maxHeight = window.innerHeight - 50;
-      const minHeight = 60;
-      box.style.height = minimized ? HEADER_HEIGHT + "px" : Math.max(minHeight, Math.min(newHeight, maxHeight)) + "px";
+      box.style.height = minimized ? HEADER_HEIGHT + "px" : Math.min(fullHeight, maxHeight) + "px";
 
       headerTitle.textContent = `Online Staff (${staffCount})`;
       headerTitle.style.color = "limegreen";
@@ -178,7 +173,7 @@ document.getElementById("simBtn").onclick = () => { simulate = !simulate; fetchS
 document.getElementById("minimizeBtn").onclick = () => {
   minimized = !minimized;
   staffListEl.style.display = minimized ? "none" : "block";
-  fetchStaff(); // Adjust height
+  fetchStaff(); // Adjust height dynamically
   document.getElementById("minimizeBtn").textContent = minimized ? "+" : "−";
   saveBoxState();
 };
@@ -194,11 +189,9 @@ function saveBoxState() {
   }));
 }
 
-// Dragging from header
+// Drag anywhere on the box
 let isDragging = false, offsetX, offsetY;
-const header = document.getElementById("headerBar");
-
-header.onmousedown = e => {
+box.onmousedown = e => {
   isDragging = true;
   offsetX = e.clientX - box.offsetLeft;
   offsetY = e.clientY - box.offsetTop;
