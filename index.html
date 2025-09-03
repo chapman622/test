@@ -40,6 +40,7 @@
     color: #fff;
     font-size: 0.85em;
     cursor: pointer;
+    margin-left: 4px;
   }
 
   button:hover { background: rgba(100,100,100,0.9); }
@@ -81,8 +82,11 @@
 <div id="staffWidget">
   <div id="headerBar">
     <span id="headerTitle">Online Staff (0)</span>
-    <button id="refreshBtn">⟳</button>
-    <button id="simBtn">Sim</button>
+    <div>
+      <button id="minimizeBtn">−</button>
+      <button id="refreshBtn">⟳</button>
+      <button id="simBtn">Sim</button>
+    </div>
   </div>
   <div id="staffList"></div>
 </div>
@@ -97,13 +101,19 @@ const HEADER_HEIGHT = 30;
 const ROW_HEIGHT = 38;
 const PADDING = 10;
 let simulate = false;
+let minimized = false;
 
-// Load saved position & size
+// Load saved position, size, and minimized state
 const saved = JSON.parse(localStorage.getItem("staffBoxPos") || "{}");
 if(saved.top) box.style.top = saved.top;
 if(saved.left) box.style.left = saved.left;
 if(saved.width) box.style.width = saved.width;
 if(saved.height) box.style.height = saved.height;
+if(saved.minimized) {
+  minimized = saved.minimized;
+  staffListEl.style.display = minimized ? "none" : "block";
+  document.getElementById("minimizeBtn").textContent = minimized ? "+" : "−";
+}
 
 async function fetchStaff() {
   try {
@@ -130,7 +140,7 @@ async function fetchStaff() {
 
     if(staffMembers.length === 0) {
       staffListEl.innerHTML = "<i>No staff online</i>";
-      box.style.height = HEADER_HEIGHT + PADDING + "px";
+      box.style.height = minimized ? HEADER_HEIGHT + "px" : HEADER_HEIGHT + PADDING + "px";
       headerTitle.textContent = "Online Staff (0)";
       headerTitle.style.color = "red";
     } else {
@@ -148,7 +158,7 @@ async function fetchStaff() {
       const newHeight = HEADER_HEIGHT + staffCount * ROW_HEIGHT + PADDING;
       const maxHeight = window.innerHeight - 50;
       const minHeight = 60;
-      box.style.height = Math.max(minHeight, Math.min(newHeight, maxHeight)) + "px";
+      box.style.height = minimized ? HEADER_HEIGHT + "px" : Math.max(minHeight, Math.min(newHeight, maxHeight)) + "px";
 
       headerTitle.textContent = `Online Staff (${staffCount})`;
       headerTitle.style.color = "limegreen";
@@ -165,8 +175,26 @@ async function fetchStaff() {
 // Buttons
 document.getElementById("refreshBtn").onclick = fetchStaff;
 document.getElementById("simBtn").onclick = () => { simulate = !simulate; fetchStaff(); };
+document.getElementById("minimizeBtn").onclick = () => {
+  minimized = !minimized;
+  staffListEl.style.display = minimized ? "none" : "block";
+  fetchStaff(); // Adjust height
+  document.getElementById("minimizeBtn").textContent = minimized ? "+" : "−";
+  saveBoxState();
+};
 
-// Dragging from header only
+// Save box position, size, and minimized state
+function saveBoxState() {
+  localStorage.setItem("staffBoxPos", JSON.stringify({
+    top: box.style.top,
+    left: box.style.left,
+    width: box.offsetWidth + "px",
+    height: box.offsetHeight + "px",
+    minimized: minimized
+  }));
+}
+
+// Dragging from header
 let isDragging = false, offsetX, offsetY;
 const header = document.getElementById("headerBar");
 
@@ -185,12 +213,7 @@ document.onmousemove = e => {
 
 document.onmouseup = () => {
   if(isDragging) isDragging = false;
-  localStorage.setItem("staffBoxPos", JSON.stringify({
-    top: box.style.top,
-    left: box.style.left,
-    width: box.offsetWidth + "px",
-    height: box.offsetHeight + "px"
-  }));
+  saveBoxState();
 };
 
 // Initial fetch + auto-refresh every 10 sec
