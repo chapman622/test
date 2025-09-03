@@ -30,7 +30,7 @@
     align-items: center;
     margin-bottom: 6px;
     font-size: 0.9em;
-    cursor: default; /* header doesn’t need grab cursor now */
+    cursor: default;
   }
 
   button {
@@ -126,7 +126,7 @@ async function fetchStaff() {
 
     // Add simulated staff if sim toggle is on
     if(simulate) {
-      const simCount = Math.floor(Math.random() * 10) + 1; // 1–10 random staff
+      const simCount = Math.floor(Math.random() * 10) + 1;
       for(let i = 1; i <= simCount; i++) {
         staffMembers.push([
           `SimStaff${i}`, 0, 0, "", true, "Simulated Staff", false
@@ -175,7 +175,13 @@ document.getElementById("simBtn").onclick = () => { simulate = !simulate; fetchS
 document.getElementById("minimizeBtn").onclick = () => {
   minimized = !minimized;
   staffListEl.style.display = minimized ? "none" : "block";
-  fetchStaff(); // Adjust height dynamically
+
+  // Adjust height without fetching staff
+  const staffCount = staffListEl.children.length;
+  const fullHeight = HEADER_HEIGHT + staffCount * ROW_HEIGHT + PADDING;
+  const maxHeight = window.innerHeight - 50;
+  box.style.height = minimized ? HEADER_HEIGHT + "px" : Math.min(fullHeight, maxHeight) + "px";
+
   document.getElementById("minimizeBtn").textContent = minimized ? "+" : "−";
   saveBoxState();
 };
