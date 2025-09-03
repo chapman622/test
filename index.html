@@ -131,7 +131,7 @@ toggleBtn.addEventListener("click", () => {
     box.style.width = "150px";
     toggleBtn.textContent = "+";
   } else {
-    updateStaffHeight(); 
+    updateStaffHeightAndWidth(); 
     toggleBtn.textContent = "−";
   }
 });
@@ -163,7 +163,7 @@ async function fetchStaff() {
 
       headerTitle.textContent = `Online Staff (${staffMembers.length})`;
       headerTitle.style.color = "limegreen";
-      if (!minimized) updateStaffHeight(staffMembers.length);
+      if (!minimized) updateStaffHeightAndWidth();
     }
   } catch(err) {
     staffListEl.innerHTML = "Error fetching staff";
@@ -173,18 +173,33 @@ async function fetchStaff() {
   }
 }
 
-// Adjust height & width based on staff
-function updateStaffHeight(staffCount) {
-  const count = staffCount || staffListEl.children.length;
+// Adjust height & auto width based on staff names/jobs
+function updateStaffHeightAndWidth() {
+  const count = staffListEl.children.length;
 
-  // Calculate max text width
+  // Calculate width based on longest name + job
   let maxTextWidth = 0;
+  const tempDiv = document.createElement("div");
+  tempDiv.style.position = "absolute";
+  tempDiv.style.visibility = "hidden";
+  tempDiv.style.whiteSpace = "nowrap";
+  tempDiv.style.fontWeight = "bold";
+  document.body.appendChild(tempDiv);
+
   staffListEl.querySelectorAll(".staffRow").forEach(row => {
-    const nameDiv = row.querySelector("div div:first-child");
-    const jobDiv = row.querySelector("div div:last-child");
-    const textWidth = nameDiv.offsetWidth + jobDiv.offsetWidth + 40; // avatar + margin
-    if (textWidth > maxTextWidth) maxTextWidth = textWidth;
+    const name = row.querySelector("div div:first-child").textContent;
+    const job = row.querySelector("div div:last-child").textContent;
+    tempDiv.style.fontWeight = "bold";
+    tempDiv.textContent = name;
+    const nameWidth = tempDiv.offsetWidth;
+    tempDiv.style.fontWeight = "normal";
+    tempDiv.textContent = job;
+    const jobWidth = tempDiv.offsetWidth;
+    const total = nameWidth + jobWidth + 40; // + avatar/margin
+    if (total > maxTextWidth) maxTextWidth = total;
   });
+
+  document.body.removeChild(tempDiv);
 
   const newWidth = Math.min(Math.max(maxTextWidth + PADDING*2, 150), 600); 
   box.style.width = minimized ? "150px" : newWidth + "px";
