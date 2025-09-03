@@ -1,226 +1,165 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<title>TT Staff Widget</title>
-<style>
-  #staffWidget {
-    position: fixed;
-    top: 50px;
-    left: 50px;
-    min-width: 200px;
-    max-width: 90vw;
-    min-height: 50px;
-    background: #222;
-    color: #fff;
-    border-radius: 10px;
-    overflow: hidden;
-    font-family: Arial, sans-serif;
-    user-select: none;
-    box-sizing: border-box;
-  }
-  #staffHeader {
-    background: #333;
-    padding: 5px 10px;
-    cursor: move;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-  }
-  #staffHeader h3 {
-    margin: 0;
-    font-size: 14px;
-  }
-  #staffButtons button {
-    margin-left: 5px;
-    background: #555;
-    color: #fff;
-    border: none;
-    padding: 2px 5px;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 12px;
-  }
-  #staffList {
-    padding: 5px 10px;
-    overflow-y: auto;
-    max-height: 60vh;
-  }
-  .staff-member {
-    display: flex;
-    align-items: center;
-    margin-bottom: 5px;
-  }
-  .staff-member img {
-    width: 24px;
-    height: 24px;
-    border-radius: 50%;
-    margin-right: 8px;
-  }
-  .staff-info {
-    font-size: 12px;
-  }
-  /* Resizer */
-  #resizer {
-    width: 15px;
-    height: 15px;
-    background: transparent;
-    position: absolute;
-    right: 0;
-    bottom: 0;
-    cursor: se-resize;
-  }
-</style>
+  <meta charset="UTF-8">
+  <title>Transport Tycoon Staff Widget</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #121212;
+      color: white;
+    }
+
+    #staffWidget {
+      position: absolute;
+      top: 50px;
+      left: 50px;
+      width: 300px;
+      min-width: 150px;
+      max-width: 600px;
+      height: 100px;
+      background: #1e1e1e;
+      color: white;
+      border-radius: 10px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      user-select: none;
+      resize: both;
+    }
+
+    #staffHeader {
+      background: #333;
+      padding: 5px 10px;
+      cursor: move;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-weight: bold;
+    }
+
+    #staffList {
+      padding: 5px 10px;
+      overflow-y: auto;
+    }
+
+    .staffRow {
+      display: flex;
+      align-items: center;
+      margin-bottom: 4px;
+    }
+
+    .staffRow img {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      margin-right: 5px;
+    }
+
+    #toggleBtn {
+      background: transparent;
+      border: none;
+      color: white;
+      font-size: 16px;
+      cursor: pointer;
+    }
+  </style>
 </head>
 <body>
 
 <div id="staffWidget">
   <div id="staffHeader">
-    <h3 id="headerTitle">Online Staff (0)</h3>
-    <div id="staffButtons">
-      <button id="simBtn">Sim</button>
-      <button id="minBtn">_</button>
-      <button id="maxBtn">⬜</button>
-    </div>
+    <span id="headerTitle">Online Staff (0)</span>
+    <button id="toggleBtn">−</button>
   </div>
   <div id="staffList"></div>
-  <div id="resizer"></div>
 </div>
 
 <script>
-const box = document.getElementById('staffWidget');
-const header = document.getElementById('staffHeader');
-const staffListEl = document.getElementById('staffList');
-const headerTitle = document.getElementById('headerTitle');
-const simBtn = document.getElementById('simBtn');
-const minBtn = document.getElementById('minBtn');
-const maxBtn = document.getElementById('maxBtn');
-const resizer = document.getElementById('resizer');
+const box = document.getElementById("staffWidget");
+const header = document.getElementById("staffHeader");
+const staffListEl = document.getElementById("staffList");
+const headerTitle = document.getElementById("headerTitle");
+const toggleBtn = document.getElementById("toggleBtn");
 
 let minimized = false;
-let maximized = false;
-let prevWidth = 250;
-let prevHeight = 200;
-
-// Draggable
-let isDragging = false;
 let dragOffsetX = 0;
 let dragOffsetY = 0;
-header.addEventListener('mousedown', (e) => {
-  isDragging = true;
+let dragging = false;
+let resizing = false;
+
+const serverUrlBase = "https://tycoon-2epova.users.cfx.re/status/widget/players.json"; // live server URL
+const HEADER_HEIGHT = 35;
+const PADDING = 10;
+const ROW_HEIGHT = 30;
+
+// Dragging
+header.addEventListener("mousedown", e => {
+  dragging = true;
   dragOffsetX = e.clientX - box.offsetLeft;
   dragOffsetY = e.clientY - box.offsetTop;
 });
-document.addEventListener('mousemove', (e) => {
-  if (isDragging) {
-    box.style.left = (e.clientX - dragOffsetX) + 'px';
-    box.style.top = (e.clientY - dragOffsetY) + 'px';
+
+document.addEventListener("mouseup", () => dragging = false);
+document.addEventListener("mousemove", e => {
+  if (dragging && !resizing) {
+    box.style.left = (e.clientX - dragOffsetX) + "px";
+    box.style.top = (e.clientY - dragOffsetY) + "px";
   }
 });
-document.addEventListener('mouseup', () => { isDragging = false; });
 
-// Resizable
-let isResizing = false;
-resizer.addEventListener('mousedown', e => { isResizing = true; e.stopPropagation(); });
-document.addEventListener('mousemove', e => {
-  if(isResizing){
-    box.style.width = e.clientX - box.offsetLeft + 'px';
-    box.style.height = e.clientY - box.offsetTop + 'px';
+// Resize from corner only
+box.addEventListener("mousedown", e => {
+  if (e.offsetX > box.clientWidth - 15 && e.offsetY > box.clientHeight - 15) {
+    resizing = true;
   }
 });
-document.addEventListener('mouseup', () => { isResizing = false; });
+document.addEventListener("mouseup", () => resizing = false);
 
-// Minimize
-minBtn.addEventListener('click', () => {
+// Toggle minimize/maximize
+toggleBtn.addEventListener("click", () => {
   minimized = !minimized;
-  if(minimized){
-    prevWidth = box.offsetWidth;
-    prevHeight = box.offsetHeight;
-    box.style.height = header.offsetHeight + 'px';
-    box.style.width = '150px';
-    staffListEl.style.display = 'none';
+  if (minimized) {
+    box.style.height = HEADER_HEIGHT + "px";
+    box.style.width = "150px";
+    toggleBtn.textContent = "+";
   } else {
-    box.style.height = prevHeight + 'px';
-    box.style.width = prevWidth + 'px';
-    staffListEl.style.display = 'block';
+    updateStaffHeight(); // recalc height/width based on staff
+    toggleBtn.textContent = "−";
   }
 });
 
-// Maximize
-maxBtn.addEventListener('click', () => {
-  maximized = !maximized;
-  if(maximized){
-    box.style.width = '90vw';
-    box.style.height = '70vh';
-    staffListEl.style.display = 'block';
-  } else {
-    box.style.width = prevWidth + 'px';
-    box.style.height = prevHeight + 'px';
-  }
-});
+// Fetch and display staff
+async function fetchStaff() {
+  try {
+    const res = await fetch(serverUrlBase);
+    const data = await res.json();
 
-// Simulated staff for testing
-simBtn.addEventListener('click', () => {
-  fetchStaff(true);
-});
+    const staffMembers = (data.players || []).filter(p => Array.isArray(p) && p[4] === true);
 
-// Fetch staff
-async function fetchStaff(sim=false){
-  try{
-    let data;
-    if(sim){
-      // Random 1-10 staff
-      const count = Math.floor(Math.random()*10)+1;
-      data = {players:[]};
-      for(let i=0;i<count;i++){
-        data.players.push([`Staff${i+1}`,i,1000+i,true,true,"Job"+i,false]);
-      }
-    } else {
-      const res = await fetch('https://tycoon-2epova.users.cfx.re/status/widget/players.json');
-      data = await res.json();
-    }
-
-    // Debug log
-    console.log("Players fetched:");
-    (data.players||[]).forEach(p => console.log(`${p[0]} → staff: ${p[4]}`));
-
-    const staffMembers = (data.players||[]).filter(p => Array.isArray(p) && p[4]===true);
-
-    if(staffMembers.length===0){
+    if (staffMembers.length === 0) {
       staffListEl.innerHTML = "No staff online";
       headerTitle.textContent = "Online Staff (0)";
       headerTitle.style.color = "red";
-      box.style.height = header.offsetHeight + 'px';
+      box.style.height = minimized ? HEADER_HEIGHT + "px" : HEADER_HEIGHT + PADDING + "px";
+      if (!minimized) box.style.width = "150px";
     } else {
       staffListEl.innerHTML = staffMembers.map(p => `
-        <div class="staff-member">
-          <img src="${p[3]||'https://via.placeholder.com/24'}">
-          <div class="staff-info">${p[0]}<br><small>${p[5]}</small></div>
+        <div class="staffRow">
+          <img src="${p[3] || 'https://via.placeholder.com/24'}">
+          <div>
+            <div>${p[0]}</div>
+            <div style="font-size:0.8em;color:#ccc">${p[5]}</div>
+          </div>
         </div>
       `).join("");
 
-      const staffCount = staffMembers.length;
-      const ROW_HEIGHT = 35;
-      const newHeight = header.offsetHeight + staffCount*ROW_HEIGHT + 10;
-      box.style.height = Math.min(newHeight, window.innerHeight-50)+'px';
-      headerTitle.textContent = `Online Staff (${staffCount})`;
+      headerTitle.textContent = `Online Staff (${staffMembers.length})`;
       headerTitle.style.color = "limegreen";
-
-      // Auto-adjust width
-      let maxTextWidth = 0;
-      staffListEl.querySelectorAll('.staff-info').forEach(info=>{
-        const temp = document.createElement('span');
-        temp.style.visibility='hidden';
-        temp.style.whiteSpace='nowrap';
-        temp.style.font = window.getComputedStyle(info).font;
-        temp.textContent = info.textContent;
-        document.body.appendChild(temp);
-        if(temp.offsetWidth>maxTextWidth) maxTextWidth=temp.offsetWidth;
-        document.body.removeChild(temp);
-      });
-      box.style.width = Math.max(maxTextWidth+60, prevWidth)+'px';
+      if (!minimized) updateStaffHeight(staffMembers.length);
     }
-  } catch(err){
+  } catch(err) {
     staffListEl.innerHTML = "Error fetching staff";
     headerTitle.textContent = "Online Staff (?)";
     headerTitle.style.color = "orange";
@@ -228,9 +167,32 @@ async function fetchStaff(sim=false){
   }
 }
 
-// Initial fetch + refresh every 10 sec
+// Adjust height & width based on staff
+function updateStaffHeight(staffCount) {
+  const count = staffCount || staffListEl.children.length;
+
+  // Calculate max text width
+  let maxTextWidth = 0;
+  staffListEl.querySelectorAll(".staffRow").forEach(row => {
+    const nameDiv = row.querySelector("div div:first-child");
+    const jobDiv = row.querySelector("div div:last-child");
+    const textWidth = nameDiv.offsetWidth + jobDiv.offsetWidth + 40; // avatar + margin
+    if (textWidth > maxTextWidth) maxTextWidth = textWidth;
+  });
+
+  const newWidth = Math.min(Math.max(maxTextWidth + PADDING*2, 150), 600); // min 150, max 600
+  box.style.width = minimized ? "150px" : newWidth + "px";
+
+  const newHeight = HEADER_HEIGHT + count * ROW_HEIGHT + PADDING;
+  const maxHeight = window.innerHeight - 50;
+  const minHeight = 100;
+  box.style.height = minimized ? HEADER_HEIGHT + "px" : Math.max(minHeight, Math.min(newHeight, maxHeight)) + "px";
+}
+
+// Auto-refresh every 10s
 fetchStaff();
-setInterval(()=>{ if(!simBtn.disabled) fetchStaff(); },10000);
+setInterval(fetchStaff, 10000);
 </script>
+
 </body>
 </html>
