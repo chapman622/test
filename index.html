@@ -130,9 +130,11 @@ toggleBtn.addEventListener("click", () => {
     box.style.height = HEADER_HEIGHT + "px";
     box.style.width = "150px";
     toggleBtn.textContent = "+";
+    staffListEl.style.overflowY = "hidden";
   } else {
     updateStaffHeightAndWidth(); 
     toggleBtn.textContent = "−";
+    staffListEl.style.overflowY = "auto";
   }
 });
 
@@ -183,7 +185,6 @@ function updateStaffHeightAndWidth() {
   tempDiv.style.position = "absolute";
   tempDiv.style.visibility = "hidden";
   tempDiv.style.whiteSpace = "nowrap";
-  tempDiv.style.fontWeight = "bold";
   document.body.appendChild(tempDiv);
 
   staffListEl.querySelectorAll(".staffRow").forEach(row => {
@@ -204,10 +205,14 @@ function updateStaffHeightAndWidth() {
   const newWidth = Math.min(Math.max(maxTextWidth + PADDING*2, 150), 600); 
   box.style.width = minimized ? "150px" : newWidth + "px";
 
-  const newHeight = HEADER_HEIGHT + count * ROW_HEIGHT + PADDING;
+  // Adjust height to fit all staff
+  let newHeight = HEADER_HEIGHT + count * ROW_HEIGHT + PADDING;
   const maxHeight = window.innerHeight - 50;
   const minHeight = 100;
-  box.style.height = minimized ? HEADER_HEIGHT + "px" : Math.max(minHeight, Math.min(newHeight, maxHeight)) + "px";
+  box.style.height = minimized ? HEADER_HEIGHT + "px" : Math.min(newHeight, maxHeight) + "px";
+
+  // If too tall, scroll
+  staffListEl.style.overflowY = newHeight > maxHeight ? "auto" : "hidden";
 }
 
 // Auto-refresh every 10s
