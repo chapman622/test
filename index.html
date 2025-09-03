@@ -18,7 +18,6 @@
     top: 50px;
     left: 50px;
     border-radius: 12px;
-    /* Shadow removed */
     overflow-y: auto;
     resize: both;
     box-sizing: border-box;
@@ -30,7 +29,7 @@
     align-items: center;
     margin-bottom: 6px;
     font-size: 0.9em;
-    cursor: move; /* Drag from header only */
+    cursor: move;
   }
 
   button {
@@ -112,13 +111,22 @@ async function fetchStaff() {
     const res = await fetch(serverUrl);
     const data = await res.json();
 
-    console.log("Players fetched:");
-    (data.players || []).forEach(p => console.log(`${p[0]} → staff: ${p[4]}`));
-
     let staffMembers = (data.players || []).filter(p => Array.isArray(p) && p[4] === true);
 
+    // Add simulated staff if sim toggle is on
     if(simulate) {
-      staffMembers.push(["SimStaff", 0, 0, "", true, "Simulated Staff", false]);
+      const simCount = Math.floor(Math.random() * 10) + 1; // 1–10 random staff
+      for(let i = 1; i <= simCount; i++) {
+        staffMembers.push([
+          `SimStaff${i}`, // name
+          0,              // source ID
+          0,              // vRP id
+          "",             // avatar
+          true,           // staff
+          "Simulated Staff", // job
+          false           // donator
+        ]);
+      }
     }
 
     if(staffMembers.length === 0) {
