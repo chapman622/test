@@ -99,13 +99,15 @@ function saveState() {
   localStorage.setItem("staffBoxState", JSON.stringify(state));
 }
 
-// Fetch staff list
+// Fetch staff list safely
 async function fetchStaff() {
   try {
     const serverUrl = serverUrlBase + "?v=" + Date.now(); // bypass cache
     const res = await fetch(serverUrl);
     const data = await res.json();
-    const staffMembers = data.players.filter(p => p[4] === true); // staff flag
+
+    // Safe filter for staff
+    const staffMembers = (data.players || []).filter(p => Array.isArray(p) && p[4] === true);
 
     if(staffMembers.length === 0) {
       staffListEl.innerHTML = "<i>No staff online</i>";
@@ -123,7 +125,6 @@ async function fetchStaff() {
         </div>
       `).join("");
 
-      // Dynamically calculate box height based on number of staff
       const staffCount = staffMembers.length;
       const newHeight = HEADER_HEIGHT + staffCount * ROW_HEIGHT + PADDING;
       const maxHeight = window.innerHeight - 50;
