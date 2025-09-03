@@ -47,18 +47,6 @@
   }
   .staff-member:last-child { border-bottom: none; }
   .staff-name { font-weight: bold; }
-  .staff-time { font-size: 0.8em; color: #ccc; margin-top: 2px; }
-  #settingsModal {
-    display: none;
-    position: absolute;
-    background: #333;
-    color: #fff;
-    padding: 15px;
-    border-radius: 10px;
-    box-shadow: 0 0 10px #000;
-    z-index: 10000;
-  }
-  #settingsModal input { width: 250px; }
 </style>
 </head>
 <body>
@@ -69,34 +57,19 @@
     <div>
       <button id="toggleBtn">−</button>
       <button id="refreshBtn">⟳</button>
-      <button id="settingsBtn">⚙</button>
     </div>
   </div>
   <div id="staffList">Loading...</div>
 </div>
 
-<div id="settingsModal">
-  <label for="apiKeyInput">API Key:</label><br>
-  <input type="text" id="apiKeyInput"><br><br>
-  <button id="saveKeyBtn">Save</button>
-  <button id="closeSettingsBtn">Close</button>
-</div>
-
 <script>
 const serverUrl = "https://tycoon-2epova.users.cfx.re/status/widget/players.json"; 
-const sessionUrl = "https://ttycoon.eu/api/v1/serverdata/sessions";
 const staffListEl = document.getElementById("staffList");
 const refreshBtn = document.getElementById("refreshBtn");
 const toggleBtn = document.getElementById("toggleBtn");
-const settingsBtn = document.getElementById("settingsBtn");
 const box = document.getElementById("staffBox");
 const header = document.getElementById("staffHeader");
 const headerTitle = header.querySelector("h3");
-
-const settingsModal = document.getElementById("settingsModal");
-const apiKeyInput = document.getElementById("apiKeyInput");
-const saveKeyBtn = document.getElementById("saveKeyBtn");
-const closeSettingsBtn = document.getElementById("closeSettingsBtn");
 
 let collapsed = false;
 const ROW_HEIGHT = 50;
@@ -114,9 +87,6 @@ collapsed = savedState.collapsed || false;
 staffListEl.style.display = collapsed ? "none" : "block";
 toggleBtn.textContent = collapsed ? '+' : '−';
 
-// Load API key
-let API_KEY = localStorage.getItem("ttApiKey") || "";
-
 // Save state helper
 function saveState() {
   const state = {
@@ -129,29 +99,12 @@ function saveState() {
   localStorage.setItem("staffBoxState", JSON.stringify(state));
 }
 
-// Convert seconds to human readable
-function formatDuration(seconds) {
-  if(seconds < 60) return `${seconds}s`;
-  if(seconds < 3600) return `${Math.floor(seconds/60)}m`;
-  const h = Math.floor(seconds/3600);
-  const m = Math.floor((seconds % 3600)/60);
-  return `${h}h ${m}m`;
-}
-
-// Fetch staff and sessions
+// Fetch staff list
 async function fetchStaff() {
   try {
-    const [playersRes, sessionsRes] = await Promise.all([
-      fetch(serverUrl),
-      fetch(sessionUrl, {
-        headers: { "X-Tycoon-Key": API_KEY }
-      })
-    ]);
-    const playersData = await playersRes.json();
-    const sessionsData = await sessionsRes.json();
-
-    const onlinePlayers = playersData.players;
-    const staffMembers = onlinePlayers.filter(p => p[4] === true);
+    const res = await fetch(serverUrl);
+    const data = await res.json();
+    const staffMembers = data.players.filter(p => p[4] === true); // staff flag
 
     if(staffMembers.length === 0) {
       staffListEl.innerHTML = "<i>No staff online</i>";
@@ -159,16 +112,11 @@ async function fetchStaff() {
       headerTitle.textContent = "Online Staff (0)";
       headerTitle.style.color = "red";
     } else {
-      staffListEl.innerHTML = staffMembers.map(p => {
-        const session = sessionsData.find(s => s.vrpId === p[2]);
-        const duration = session ? formatDuration(session.sessionDuration) : "";
-        return `
-          <div class="staff-member">
-            <div class="staff-name">${p[0]}</div>
-            ${duration ? `<div class="staff-time">(${duration} online)</div>` : ''}
-          </div>
-        `;
-      }).join("");
+      staffListEl.innerHTML = staffMembers.map(p => `
+        <div class="staff-member">
+          <div class="staff-name">${p[0]}</div>
+        </div>
+      `).join("");
 
       let newHeight = HEADER_HEIGHT + staffMembers.length * ROW_HEIGHT + PADDING;
       newHeight = Math.min(newHeight, window.innerHeight - 50);
@@ -200,19 +148,6 @@ toggleBtn.addEventListener('click', () => {
   saveState();
 });
 
-// Settings modal
-settingsBtn.addEventListener("click", () => {
-  apiKeyInput.value = API_KEY;
-  settingsModal.style.display = "block";
-});
-saveKeyBtn.addEventListener("click", () => {
-  API_KEY = apiKeyInput.value.trim();
-  localStorage.setItem("ttApiKey", API_KEY);
-  settingsModal.style.display = "none";
-  fetchStaff();
-});
-closeSettingsBtn.addEventListener("click", () => { settingsModal.style.display = "none"; });
-
 // Draggable
 let isDragging = false, offsetX = 0, offsetY = 0;
 header.addEventListener('mousedown', e => {
@@ -237,6 +172,5 @@ document.addEventListener('mouseup', () => {
 box.addEventListener('mouseup', saveState);
 box.addEventListener('keyup', saveState);
 </script>
-
 </body>
 </html>
