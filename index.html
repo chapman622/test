@@ -36,12 +36,11 @@
     font-size: 12px;
     margin-left: 2px;
   }
-  #simulateBtn { display: none; } /* Hide simulation button */
+  #simulateBtn { display: none; } /* Hidden simulation button */
   #staffList { flex: 1; overflow-y: auto; }
   .staff-member { display: flex; align-items: center; padding: 5px; border-bottom: 1px solid #444; }
   .staff-member:last-child { border-bottom: none; }
   .staff-avatar { width: 32px; height: 32px; border-radius: 50%; margin-right: 10px; }
-  .donator { color: gold; font-weight: bold; }
 </style>
 </head>
 <body>
@@ -52,7 +51,7 @@
     <div>
       <button id="toggleBtn">−</button>
       <button id="refreshBtn">⟳</button>
-      <button id="simulateBtn">Simulate Staff</button> <!-- Hidden -->
+      <button id="simulateBtn">Simulate Staff</button>
     </div>
   </div>
   <div id="staffList">Loading...</div>
@@ -111,9 +110,9 @@ async function fetchStaff() {
       headerTitle.style.color = "red";
     } else {
       staffListEl.innerHTML = staffMembers.map(p => `
-        <div class="staff-member ${p[6] ? 'donator' : ''}">
+        <div class="staff-member">
           ${p[3] ? `<img src="${p[3]}" class="staff-avatar" />` : ''}
-          ${p[0]} - ${p[5]} ${p[6] ? '(Donator)' : ''}
+          ${p[0]} - ${p[5]}
         </div>
       `).join("");
 
