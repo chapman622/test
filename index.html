@@ -196,9 +196,9 @@ async function fetchStaff() {
   }
 }
 
-// Initial fetch + auto-refresh every 10s
+// Initial fetch + auto-refresh every 10s (even if minimized)
 fetchStaff();
-setInterval(() => { if (!minimized) fetchStaff(); }, 10000);
+setInterval(fetchStaff, 10000);
 </script>
 
 </body>
