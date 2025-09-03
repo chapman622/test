@@ -109,7 +109,7 @@ staffWidget.addEventListener('mousedown', (e) => {
 });
 document.addEventListener('mouseup', () => isDragging = false);
 document.addEventListener('mousemove', (e) => {
-  if(isDragging && !minimized){
+  if(isDragging){
     staffWidget.style.left = e.clientX - offsetX + 'px';
     staffWidget.style.top = e.clientY - offsetY + 'px';
   }
@@ -127,8 +127,8 @@ document.addEventListener('mousemove', (e) => {
   if (isResizing && !minimized) {
     const newWidth = e.clientX - staffWidget.offsetLeft;
     const newHeight = e.clientY - staffWidget.offsetTop;
-    staffWidget.style.width = Math.max(220, newWidth) + 'px'; // min width locked
-    staffWidget.style.height = Math.max(HEADER_HEIGHT, newHeight) + 'px'; // min height locked
+    staffWidget.style.width = Math.max(220, newWidth) + 'px';
+    staffWidget.style.height = Math.max(HEADER_HEIGHT, newHeight) + 'px';
   }
 });
 
@@ -136,11 +136,13 @@ document.addEventListener('mousemove', (e) => {
 minMaxButton.addEventListener('click', () => {
   minimized = !minimized;
   if(minimized){
-    staffWidget.style.height = HEADER_HEIGHT + 'px'; // fixed header height
-    staffWidget.style.width = '220px';  // fixed width
+    staffWidget.style.height = HEADER_HEIGHT + 'px';
+    staffWidget.style.width = '220px';
     minMaxButton.textContent = '+';
+    resizeHandle.style.display = "none"; // 🔥 hide resize handle
   } else {
     minMaxButton.textContent = '-';
+    resizeHandle.style.display = "block"; // 🔥 show resize handle
     fetchStaff();
   }
 });
