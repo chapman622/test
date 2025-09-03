@@ -1,115 +1,21 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<title>Transport Tycoon Staff Tracker</title>
-<style>
-  body { font-family: sans-serif; }
-  #staffBox {
-    position: absolute;
-    background: #222;
-    color: #fff;
-    padding: 10px;
-    border-radius: 10px;
-    box-shadow: 0 0 10px #000;
-    z-index: 9999;
-    display: flex;
-    flex-direction: column;
-    resize: both;
-    overflow: hidden;
-  }
-  #staffHeader {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 10px;
-    cursor: grab;
-  }
-  #staffHeader h3 { margin: 0; font-size: 16px; }
-  #staffHeader button {
-    padding: 3px 6px;
-    cursor: pointer;
-    background-color: #444;
-    color: #fff;
-    border: none;
-    border-radius: 5px;
-    font-size: 12px;
-    margin-left: 2px;
-  }
-  #staffList { flex: 1; overflow-y: auto; }
-  .staff-member {
-    display: flex;
-    align-items: center;
-    padding: 5px;
-    border-bottom: 1px solid #444;
-  }
-  .staff-member:last-child { border-bottom: none; }
-  .staff-name { font-weight: bold; }
-  .staff-job { font-size: 0.8em; color: #ccc; }
-  .staff-member img { width:30px; height:30px; border-radius:50%; margin-right:5px; }
-</style>
-</head>
-<body>
-
-<div id="staffBox">
-  <div id="staffHeader">
-    <h3>Online Staff</h3>
-    <div>
-      <button id="toggleBtn">−</button>
-      <button id="refreshBtn">⟳</button>
-    </div>
-  </div>
-  <div id="staffList">Loading...</div>
-</div>
-
-<script>
-const serverUrlBase = "https://tycoon-2epova.users.cfx.re/status/widget/players.json"; 
-const staffListEl = document.getElementById("staffList");
-const refreshBtn = document.getElementById("refreshBtn");
-const toggleBtn = document.getElementById("toggleBtn");
-const box = document.getElementById("staffBox");
-const header = document.getElementById("staffHeader");
-const headerTitle = header.querySelector("h3");
-
-let collapsed = false;
-const ROW_HEIGHT = 50;
-const HEADER_HEIGHT = 40;
-const PADDING = 20;
-const REFRESH_INTERVAL = 5000;
-
-// Load saved state
-const savedState = JSON.parse(localStorage.getItem("staffBoxState") || "{}");
-box.style.left = savedState.left || "50px";
-box.style.top = savedState.top || "50px";
-box.style.width = savedState.width || "300px";
-box.style.height = savedState.height || "400px";
-collapsed = savedState.collapsed || false;
-staffListEl.style.display = collapsed ? "none" : "block";
-toggleBtn.textContent = collapsed ? '+' : '−';
-
-// Save state helper
-function saveState() {
-  const state = {
-    left: box.style.left,
-    top: box.style.top,
-    width: box.style.width,
-    height: box.style.height,
-    collapsed
-  };
-  localStorage.setItem("staffBoxState", JSON.stringify(state));
-}
-
-// Fetch staff list safely
 async function fetchStaff() {
   try {
     const serverUrl = serverUrlBase + "?v=" + Date.now(); // bypass cache
     const res = await fetch(serverUrl);
     const data = await res.json();
 
-    // Safe filter for staff
-    const staffMembers = (data.players || []).filter(p => Array.isArray(p) && p[4] === true);
+    // Debug: log all players and staff flag
+    console.log("Players fetched:");
+    (data.players || []).forEach(p => {
+      console.log(`${p[0]} → staff: ${p[4]}`);
+    });
 
-    if(staffMembers.length === 0) {
+    // Safe filter for staff
+    const staffMembers = (data.players || []).filter(
+      p => Array.isArray(p) && p[4] === true
+    );
+
+    if (staffMembers.length === 0) {
       staffListEl.innerHTML = "<i>No staff online</i>";
       box.style.height = HEADER_HEIGHT + PADDING + "px";
       headerTitle.textContent = "Online Staff (0)";
@@ -142,48 +48,3 @@ async function fetchStaff() {
     headerTitle.style.color = "orange";
   }
 }
-
-// Initial fetch + auto-refresh
-fetchStaff();
-setInterval(fetchStaff, REFRESH_INTERVAL);
-
-// Buttons
-refreshBtn.addEventListener('click', fetchStaff);
-toggleBtn.addEventListener('click', () => {
-  collapsed = !collapsed;
-  staffListEl.style.display = collapsed ? 'none' : 'block';
-  toggleBtn.textContent = collapsed ? '+' : '−';
-  saveState();
-});
-
-// Draggable
-let isDragging = false, offsetX = 0, offsetY = 0;
-header.addEventListener('mousedown', e => {
-  isDragging = true;
-  offsetX = e.clientX - box.offsetLeft;
-  offsetY = e.clientY - box.offsetTop;
-  header.style.cursor = 'grabbing';
-});
-document.addEventListener('mousemove', e => {
-  if(isDragging) {
-    box.style.left = (e.clientX - offsetX) + 'px';
-    box.style.top = (e.clientY - offsetY) + 'px';
-  }
-});
-document.addEventListener('mouseup', () => {
-  if(isDragging) saveState();
-  isDragging = false;
-  header.style.cursor = 'grab';
-});
-
-// Save size changes
-box.addEventListener('mouseup', saveState);
-box.addEventListener('keyup', saveState);
-
-// Auto-reload app in-game every 10 seconds for development/testing
-setInterval(() => {
-  location.reload();
-}, 10000);
-</script>
-</body>
-</html>
