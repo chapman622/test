@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <title>Transport Tycoon Staff Widget</title>
   <style>
+    /* Styling for the widget */
     #staffWidget {
       position: absolute;
       top: 50px;
@@ -103,12 +104,13 @@ let dragOffsetX = 0;
 let dragOffsetY = 0;
 let dragging = false;
 let resizing = false;
+let simActive = false;
 
 const HEADER_HEIGHT = 35;
 const PADDING = 10;
 const ROW_HEIGHT = 30;
+const SERVER_URL = 'https://tycoon-2epova.users.cfx.re/status/widget/players.json';
 
-// Dragging
 header.addEventListener("mousedown", e => {
   dragging = true;
   dragOffsetX = e.clientX - box.offsetLeft;
@@ -123,7 +125,6 @@ document.addEventListener("mousemove", e => {
   }
 });
 
-// Resize from corner only
 box.addEventListener("mousedown", e => {
   if (e.offsetX > box.clientWidth - 15 && e.offsetY > box.clientHeight - 15) {
     resizing = true;
@@ -131,7 +132,6 @@ box.addEventListener("mousedown", e => {
 });
 document.addEventListener("mouseup", () => resizing = false);
 
-// Toggle minimize/maximize
 toggleBtn.addEventListener("click", () => {
   minimized = !minimized;
   if (minimized) {
@@ -146,20 +146,37 @@ toggleBtn.addEventListener("click", () => {
   }
 });
 
-// Simulate staff
 simBtn.addEventListener("click", () => {
-  const count = Math.floor(Math.random() * 10) + 1; // 1-10
-  const fakeStaff = Array.from({length: count}, (_, i) => [
-    `Player${i+1}`,
-    i,
-    i+1000,
-    `https://i.pravatar.cc/24?img=${i+1}`,
-    true,
-    ["Cargo Pilot","Bus Driver","EMS / Paramedic","Trucker","R.T.S. Transporter"][i%5],
-    false
-  ]);
-  displayStaff(fakeStaff);
+  simActive = !simActive;
+  if (simActive) {
+    const fakeStaff = Array.from({ length: Math.floor(Math.random() * 10) + 1 }, (_, i) => [
+      `SimStaff${i+1}`,
+      i,
+      i+1000,
+      `https://i.pravatar.cc/24?img=${i+1}`,
+      true,
+      ["Cargo Pilot", "Bus Driver", "EMS / Paramedic", "Trucker", "R.T.S. Transporter"][i % 5],
+      false
+    ]);
+    displayStaff(fakeStaff);
+  } else {
+    fetchRealStaff();
+  }
 });
+
+async function fetchRealStaff() {
+  try {
+    const res = await fetch(SERVER_URL);
+    const data = await res.json();
+
+    const realStaff = data.players.filter(p => p[4] === true);
+
+    displayStaff(realStaff);
+  } catch (err) {
+    staffListEl.innerHTML = "Error fetching staff";
+    console.error(err);
+  }
+}
 
 function displayStaff(staffMembers) {
   if (staffMembers.length === 0) {
@@ -185,11 +202,9 @@ function displayStaff(staffMembers) {
   }
 }
 
-// Adjust height & auto width
 function updateStaffHeightAndWidth() {
   const count = staffListEl.children.length;
 
-  // Calculate width based on longest name + job
   let maxTextWidth = 0;
   const tempDiv = document.createElement("div");
   tempDiv.style.position = "absolute";
@@ -206,7 +221,7 @@ function updateStaffHeightAndWidth() {
     tempDiv.style.fontWeight = "normal";
     tempDiv.textContent = job;
     const jobWidth = tempDiv.offsetWidth;
-    const total = nameWidth + jobWidth + 40; // + avatar/margin
+    const total = nameWidth + jobWidth + 40;
     if (total > maxTextWidth) maxTextWidth = total;
   });
 
@@ -223,9 +238,8 @@ function updateStaffHeightAndWidth() {
   staffListEl.style.overflowY = newHeight > maxHeight ? "auto" : "hidden";
 }
 
-// Optionally, you can also fetch real staff if available
-// fetchStaff(); 
-// setInterval(fetchStaff, 10000);
+// Initial fetch
+fetchRealStaff();
 </script>
 
 </body>
