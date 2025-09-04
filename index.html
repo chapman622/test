@@ -2,186 +2,241 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Transport Tycoon Staff Widget</title>
+<title>Staff Widget</title>
 <style>
-  html, body {
+  body {
+    background: transparent; /* page background remains transparent */
     margin: 0;
-    padding: 0;
-    background: transparent;
-    font-family: Arial, sans-serif;
+    font-family: sans-serif;
   }
+
   #staffWidget {
-    position: fixed;
+    position: absolute;
     top: 50px;
     left: 50px;
     width: 250px;
-    min-width: 150px;
-    background: #222;
-    border-radius: 10px;
+    background-color: #2c2f33; /* same as header */
     color: white;
+    border-radius: 12px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
     user-select: none;
-    z-index: 1000;
   }
-  #header {
-    background: #444;
-    padding: 5px 10px;
+
+  #staffHeader {
+    background-color: #2c2f33;
+    padding: 6px 10px;
     cursor: move;
     display: flex;
-    justify-content: space-between;
     align-items: center;
-    border-radius: 10px 10px 0 0;
+    justify-content: space-between;
   }
-  #headerTitle {
+
+  #staffHeader span {
     font-weight: bold;
-    font-size: 14px;
   }
-  #buttons {
+
+  #staffButtons {
     display: flex;
-    gap: 5px;
+    gap: 4px;
   }
-  .widgetBtn {
-    width: 20px;
-    height: 20px;
+
+  .staff-button {
+    background: #7289da;
+    color: white;
     border: none;
-    cursor: pointer;
     border-radius: 4px;
+    width: 24px;
+    height: 24px;
+    cursor: pointer;
     font-weight: bold;
-    color: white;
   }
-  #minBtn {
-    background: #666;
+
+  .staff-button.active {
+    background: #43b581; /* green for active sim button */
   }
-  #simBtn {
-    background: #666;
-  }
+
   #staffList {
-    padding: 5px 10px;
+    padding: 6px;
+    overflow-y: auto;
   }
-  .staffMember {
-    margin-bottom: 5px;
+
+  .staff-entry {
+    display: flex;
+    align-items: center;
+    margin-bottom: 4px;
   }
-  .staffName {
+
+  .staff-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    margin-right: 6px;
+  }
+
+  .staff-info {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .staff-info .staff-name {
     font-weight: bold;
     color: white;
   }
-  .staffJob {
+
+  .staff-info .staff-job {
+    font-size: 0.85em;
     color: white;
   }
+
+  #resizer {
+    width: 12px;
+    height: 12px;
+    background: #7289da;
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    cursor: nwse-resize;
+    border-radius: 3px;
+  }
+
 </style>
 </head>
 <body>
 
 <div id="staffWidget">
-  <div id="header">
+  <div id="staffHeader">
     <span id="headerTitle">Online Staff (0)</span>
-    <div id="buttons">
-      <button id="simBtn" class="widgetBtn">S</button>
-      <button id="minBtn" class="widgetBtn">-</button>
+    <div id="staffButtons">
+      <button id="simButton" class="staff-button">S</button>
+      <button id="minMaxButton" class="staff-button">-</button>
     </div>
   </div>
   <div id="staffList"></div>
+  <div id="resizer"></div>
 </div>
 
 <script>
-const staffWidget = document.getElementById('staffWidget');
-const header = document.getElementById('header');
-const staffList = document.getElementById('staffList');
-const headerTitle = document.getElementById('headerTitle');
-const minBtn = document.getElementById('minBtn');
-const simBtn = document.getElementById('simBtn');
+const serverUrl = "https://tycoon-2epova.users.cfx.re/status/widget/players.json";
+const staffWidget = document.getElementById("staffWidget");
+const staffListEl = document.getElementById("staffList");
+const headerTitle = document.getElementById("headerTitle");
+const simButton = document.getElementById("simButton");
+const minMaxButton = document.getElementById("minMaxButton");
+const resizer = document.getElementById("resizer");
 
-let isMinimized = false;
+let minimized = false;
 let simActive = false;
 
 // Dragging
-let offsetX, offsetY, isDragging = false;
-header.addEventListener('mousedown', e => {
+let isDragging = false;
+let dragOffsetX = 0;
+let dragOffsetY = 0;
+
+staffWidget.addEventListener("mousedown", e => {
+  if(e.target === resizer) return; // don't drag if resizing
   isDragging = true;
-  offsetX = e.clientX - staffWidget.offsetLeft;
-  offsetY = e.clientY - staffWidget.offsetTop;
+  dragOffsetX = e.clientX - staffWidget.offsetLeft;
+  dragOffsetY = e.clientY - staffWidget.offsetTop;
 });
-document.addEventListener('mousemove', e => {
+document.addEventListener("mouseup", () => { isDragging = false; });
+document.addEventListener("mousemove", e => {
   if(isDragging){
-    staffWidget.style.left = (e.clientX - offsetX) + 'px';
-    staffWidget.style.top = (e.clientY - offsetY) + 'px';
+    staffWidget.style.left = (e.clientX - dragOffsetX) + "px";
+    staffWidget.style.top = (e.clientY - dragOffsetY) + "px";
   }
 });
-document.addEventListener('mouseup', () => { isDragging = false; });
+
+// Resizing
+let isResizing = false;
+resizer.addEventListener("mousedown", e => {
+  isResizing = true;
+  e.stopPropagation();
+});
+document.addEventListener("mouseup", () => { isResizing = false; });
+document.addEventListener("mousemove", e => {
+  if(isResizing){
+    let newWidth = e.clientX - staffWidget.offsetLeft;
+    let newHeight = e.clientY - staffWidget.offsetTop;
+    staffWidget.style.width = Math.max(150, newWidth) + "px";
+    staffWidget.style.height = Math.max(50, newHeight) + "px";
+  }
+});
 
 // Minimize/Maximize
-minBtn.addEventListener('click', () => {
-  isMinimized = !isMinimized;
-  if(isMinimized){
-    staffList.style.display = 'none';
-    staffWidget.style.height = header.offsetHeight + 'px';
-    minBtn.textContent = '+';
+minMaxButton.addEventListener("click", () => {
+  minimized = !minimized;
+  if(minimized){
+    staffListEl.style.display = "none";
+    resizer.style.display = "none";
+    staffWidget.style.height = "36px";
+    staffWidget.style.width = "150px";
+    minMaxButton.textContent = "+";
   } else {
-    staffList.style.display = 'block';
-    minBtn.textContent = '-';
-    updateWidgetHeight();
+    staffListEl.style.display = "block";
+    resizer.style.display = "block";
+    minMaxButton.textContent = "-";
   }
 });
 
-// Sim Button
-simBtn.addEventListener('click', () => {
+// Sim button toggle
+simButton.addEventListener("click", () => {
   simActive = !simActive;
-  simBtn.style.background = simActive ? 'green' : '#666';
+  simButton.classList.toggle("active", simActive);
   fetchStaff();
 });
 
-function updateWidgetHeight(){
-  if(isMinimized) return;
-  const staffCount = staffList.children.length;
-  let newHeight = header.offsetHeight + staffCount * 35 + 10; // padding
-  const maxHeight = window.innerHeight - 50;
-  staffWidget.style.height = Math.min(newHeight, maxHeight) + 'px';
-}
-
 // Fetch staff
-async function fetchStaff(){
+async function fetchStaff() {
   try {
-    const res = await fetch('https://tycoon-2epova.users.cfx.re/status/widget/players.json');
+    const res = await fetch(serverUrl);
     const data = await res.json();
-    let staffMembers = (data.players || []).filter(p => p[4] === true);
-    
-    // Add sim staff if active
+
+    let players = data.players || [];
+    let realStaff = players.filter(p => Array.isArray(p) && p[4] === true);
+
     if(simActive){
-      const simCount = Math.min(Math.floor(Math.random()*20)+1, 20);
+      let simCount = Math.min(20, Math.floor(Math.random()*10)+1);
+      let simStaff = [];
       for(let i=0;i<simCount;i++){
-        staffMembers.push(["SimStaff"+i,0,0,true,"Sim Job",true]);
+        simStaff.push(["SimStaff"+(i+1),0,0,"https://cdn.discordapp.com/embed/avatars/"+(i%5)+".png",true,"Job",true]);
       }
+      players = [...realStaff, ...simStaff];
+    } else {
+      players = realStaff;
     }
-    
-    // Render staff
-    if(staffMembers.length === 0){
-      staffList.innerHTML = "No staff online";
+
+    if(players.length === 0){
+      staffListEl.innerHTML = "No staff online";
       headerTitle.textContent = "Online Staff (0)";
       headerTitle.style.color = "red";
     } else {
-      staffList.innerHTML = staffMembers.map(p => `
-        <div class="staffMember">
-          <div class="staffName">${p[0]}</div>
-          <div class="staffJob">${p[5]}</div>
+      staffListEl.innerHTML = players.map(p => `
+        <div class="staff-entry">
+          <img src="${p[3]}" alt="avatar" class="staff-avatar">
+          <div class="staff-info">
+            <span class="staff-name">${p[0]}</span>
+            <span class="staff-job">${p[5]}</span>
+          </div>
         </div>
-      `).join('');
-      headerTitle.textContent = `Online Staff (${staffMembers.length})`;
+      `).join("");
+      headerTitle.textContent = `Online Staff (${players.length})`;
       headerTitle.style.color = "limegreen";
     }
-    
-    updateWidgetHeight();
-    
+
   } catch(err){
-    staffList.innerHTML = "Error fetching staff";
+    staffListEl.innerHTML = "Error fetching staff";
     headerTitle.textContent = "Online Staff (?)";
     headerTitle.style.color = "orange";
     console.error(err);
   }
 }
 
-// Auto refresh every 10 seconds
-setInterval(fetchStaff, 10000);
+// Auto-refresh
+setInterval(fetchStaff, 10000); // every 10s
 fetchStaff();
-
 </script>
+
 </body>
 </html>
