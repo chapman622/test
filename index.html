@@ -172,11 +172,33 @@ staffWidget.addEventListener("mousedown", e => {
   dragOffsetX = e.clientX - staffWidget.offsetLeft;
   dragOffsetY = e.clientY - staffWidget.offsetTop;
 });
-document.addEventListener("mouseup", () => { isDragging = false; isResizing = false; });
+
+document.addEventListener("mouseup", () => { 
+  if(isDragging){
+    // Save position on drag end
+    localStorage.setItem("staffWidgetPos", JSON.stringify({
+      left: staffWidget.style.left,
+      top: staffWidget.style.top
+    }));
+  }
+  isDragging = false; 
+  isResizing = false; 
+});
+
 document.addEventListener("mousemove", e => {
   if(isDragging){
     staffWidget.style.left = (e.clientX - dragOffsetX) + "px";
     staffWidget.style.top = (e.clientY - dragOffsetY) + "px";
+  }
+});
+
+// Restore position on load
+window.addEventListener("load", () => {
+  const savedPos = localStorage.getItem("staffWidgetPos");
+  if(savedPos){
+    const {left, top} = JSON.parse(savedPos);
+    staffWidget.style.left = left;
+    staffWidget.style.top = top;
   }
 });
 
