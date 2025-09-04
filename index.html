@@ -154,6 +154,13 @@ let simActive = false;
 let audioEnabled = false; // start muted
 let previousStaff = [];
 
+// Random names for SimStaff
+const simNames = [
+  "Alex", "Jamie", "Taylor", "Jordan", "Casey", 
+  "Morgan", "Riley", "Avery", "Quinn", "Reese",
+  "Charlie", "Dakota", "Harley", "Peyton", "Skyler"
+];
+
 // Dragging
 let isDragging = false;
 let dragOffsetX = 0;
@@ -236,7 +243,9 @@ async function fetchStaff() {
       let simCount = Math.min(20, Math.floor(Math.random()*10)+1);
       let simStaff = [];
       for(let i=0;i<simCount;i++){
-        simStaff.push(["SimStaff"+(i+1),0,0,"https://cdn.discordapp.com/embed/avatars/"+(i%5)+".png",true,"Job",true]);
+        const name = simNames[Math.floor(Math.random() * simNames.length)];
+        const avatarIndex = Math.floor(Math.random() * 5); // 0-4 avatars
+        simStaff.push([name, 0, 0, `https://cdn.discordapp.com/embed/avatars/${avatarIndex}.png`, true, "Job", true]);
       }
       players = [...realStaff, ...simStaff];
     } else {
