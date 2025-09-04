@@ -44,14 +44,27 @@
   }
 
   .staff-button {
-    background: #7289da;
-    color: white;
     border: none;
     border-radius: 4px;
     width: 24px;
     height: 24px;
     cursor: pointer;
     font-weight: bold;
+    color: white;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .staff-button.muted {
+    background: red;
+    text-decoration: line-through;
+  }
+
+  .staff-button.enabled {
+    background: #43b581;
+    text-decoration: none;
   }
 
   .staff-button.active {
@@ -111,6 +124,7 @@
     <span id="headerTitle">Online Staff (0)</span>
     <div id="staffButtons">
       <button id="simButton" class="staff-button">S</button>
+      <button id="soundButton" class="staff-button muted">🔊</button>
       <button id="minMaxButton" class="staff-button">-</button>
     </div>
   </div>
@@ -126,12 +140,14 @@ const staffWidget = document.getElementById("staffWidget");
 const staffListEl = document.getElementById("staffList");
 const headerTitle = document.getElementById("headerTitle");
 const simButton = document.getElementById("simButton");
+const soundButton = document.getElementById("soundButton");
 const minMaxButton = document.getElementById("minMaxButton");
 const resizer = document.getElementById("resizer");
 const staffJoinSound = document.getElementById("staffJoinSound");
 
 let minimized = false;
 let simActive = false;
+let audioEnabled = false; // start muted
 let previousStaff = [];
 
 // Dragging
@@ -191,6 +207,18 @@ simButton.addEventListener("click", () => {
   fetchStaff();
 });
 
+// Sound toggle button
+soundButton.addEventListener("click", () => {
+  audioEnabled = !audioEnabled;
+  if(audioEnabled){
+    soundButton.classList.remove("muted");
+    soundButton.classList.add("enabled");
+  } else {
+    soundButton.classList.remove("enabled");
+    soundButton.classList.add("muted");
+  }
+});
+
 // Fetch staff
 async function fetchStaff() {
   try {
@@ -211,10 +239,10 @@ async function fetchStaff() {
       players = realStaff;
     }
 
-    // Play sound for any new staff by name
+    // Detect new staff by name
     const previousNames = previousStaff.map(p => p[0]);
     const newStaff = players.filter(p => !previousNames.includes(p[0]));
-    if(newStaff.length > 0){
+    if(newStaff.length > 0 && audioEnabled){
       staffJoinSound.play().catch(e => console.log("Sound play error:", e));
     }
     previousStaff = players;
