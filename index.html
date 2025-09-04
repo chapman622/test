@@ -22,6 +22,7 @@
     display: flex;
     flex-direction: column;
     user-select: none;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.5);
   }
 
   #staffHeader {
@@ -60,6 +61,7 @@
   #staffList {
     padding: 6px;
     overflow-y: auto;
+    max-height: 300px;
   }
 
   .staff-entry {
@@ -117,6 +119,9 @@
   <div id="resizer"></div>
 </div>
 
+<!-- Audio for staff join -->
+<audio id="staffJoinSound" src="https://raw.githubusercontent.com/yourusername/yourrepo/main/staff-join.mp3" preload="auto"></audio>
+
 <script>
 const serverUrl = "https://tycoon-2epova.users.cfx.re/status/widget/players.json";
 const staffWidget = document.getElementById("staffWidget");
@@ -125,9 +130,11 @@ const headerTitle = document.getElementById("headerTitle");
 const simButton = document.getElementById("simButton");
 const minMaxButton = document.getElementById("minMaxButton");
 const resizer = document.getElementById("resizer");
+const staffJoinSound = document.getElementById("staffJoinSound");
 
 let minimized = false;
 let simActive = false;
+let previousStaff = [];
 
 // Dragging
 let isDragging = false;
@@ -140,7 +147,7 @@ staffWidget.addEventListener("mousedown", e => {
   dragOffsetX = e.clientX - staffWidget.offsetLeft;
   dragOffsetY = e.clientY - staffWidget.offsetTop;
 });
-document.addEventListener("mouseup", () => { isDragging = false; });
+document.addEventListener("mouseup", () => { isDragging = false; isResizing = false; });
 document.addEventListener("mousemove", e => {
   if(isDragging){
     staffWidget.style.left = (e.clientX - dragOffsetX) + "px";
@@ -154,7 +161,6 @@ resizer.addEventListener("mousedown", e => {
   isResizing = true;
   e.stopPropagation();
 });
-document.addEventListener("mouseup", () => { isResizing = false; });
 document.addEventListener("mousemove", e => {
   if(isResizing){
     let newWidth = e.clientX - staffWidget.offsetLeft;
@@ -206,6 +212,12 @@ async function fetchStaff() {
     } else {
       players = realStaff;
     }
+
+    // Play sound if new staff joined
+    if(players.length > previousStaff.length){
+      staffJoinSound.play().catch(e => console.log("Sound play error:", e));
+    }
+    previousStaff = players;
 
     if(players.length === 0){
       staffListEl.innerHTML = "No staff online";
