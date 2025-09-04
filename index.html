@@ -132,8 +132,11 @@
   <div id="resizer"></div>
 </div>
 
-<!-- Updated audio URL -->
-<audio id="staffJoinSound" src="https://chapman622.github.io/test/assets/join.mp3" preload="auto"></audio>
+<!-- Audio with proper type -->
+<audio id="staffJoinSound" preload="auto">
+  <source src="https://chapman622.github.io/test/assets/join.mp3" type="audio/mpeg">
+  Your browser does not support the audio element.
+</audio>
 
 <script>
 const serverUrl = "https://tycoon-2epova.users.cfx.re/status/widget/players.json";
