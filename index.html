@@ -5,7 +5,7 @@
 <title>Staff Widget</title>
 <style>
   body {
-    background: transparent; /* page background remains transparent */
+    background: transparent;
     margin: 0;
     font-family: sans-serif;
   }
@@ -15,7 +15,7 @@
     top: 50px;
     left: 50px;
     width: 250px;
-    background-color: #2c2f33; /* same as header */
+    background-color: #2c2f33;
     color: white;
     border-radius: 12px;
     overflow: hidden;
@@ -55,7 +55,7 @@
   }
 
   .staff-button.active {
-    background: #43b581; /* green for active sim button */
+    background: #43b581;
   }
 
   #staffList {
@@ -102,7 +102,6 @@
     cursor: nwse-resize;
     border-radius: 3px;
   }
-
 </style>
 </head>
 <body>
@@ -119,7 +118,6 @@
   <div id="resizer"></div>
 </div>
 
-<!-- Audio for staff join -->
 <audio id="staffJoinSound" src="https://raw.githubusercontent.com/yourusername/yourrepo/main/staff-join.mp3" preload="auto"></audio>
 
 <script>
@@ -142,7 +140,7 @@ let dragOffsetX = 0;
 let dragOffsetY = 0;
 
 staffWidget.addEventListener("mousedown", e => {
-  if(e.target === resizer) return; // don't drag if resizing
+  if(e.target === resizer) return;
   isDragging = true;
   dragOffsetX = e.clientX - staffWidget.offsetLeft;
   dragOffsetY = e.clientY - staffWidget.offsetTop;
@@ -213,8 +211,10 @@ async function fetchStaff() {
       players = realStaff;
     }
 
-    // Play sound if new staff joined
-    if(players.length > previousStaff.length){
+    // Play sound for any new staff by name
+    const previousNames = previousStaff.map(p => p[0]);
+    const newStaff = players.filter(p => !previousNames.includes(p[0]));
+    if(newStaff.length > 0){
       staffJoinSound.play().catch(e => console.log("Sound play error:", e));
     }
     previousStaff = players;
@@ -246,7 +246,7 @@ async function fetchStaff() {
 }
 
 // Auto-refresh
-setInterval(fetchStaff, 10000); // every 10s
+setInterval(fetchStaff, 10000);
 fetchStaff();
 </script>
 
