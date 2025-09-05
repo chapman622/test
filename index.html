@@ -71,10 +71,18 @@
     background: #43b581;
   }
 
-  #staffList {
+  #staffList, #leftStaffList {
     padding: 6px;
     overflow-y: auto;
+  }
+
+  #staffList {
     max-height: 300px;
+  }
+
+  #leftStaffList {
+    max-height: 100px;
+    display: none;
   }
 
   .staff-entry {
@@ -121,6 +129,11 @@
     transition: background-color 2s ease;
   }
 
+  .staff-leave {
+    background-color: rgba(255, 0, 0, 0.3);
+    transition: background-color 2s ease;
+  }
+
 </style>
 </head>
 <body>
@@ -135,6 +148,7 @@
     </div>
   </div>
   <div id="staffList"></div>
+  <div id="leftStaffList"></div>
   <div id="resizer"></div>
 </div>
 
@@ -152,6 +166,7 @@
 const serverUrl = "https://tycoon-2epova.users.cfx.re/status/widget/players.json";
 const staffWidget = document.getElementById("staffWidget");
 const staffListEl = document.getElementById("staffList");
+const leftStaffListEl = document.getElementById("leftStaffList");
 const headerTitle = document.getElementById("headerTitle");
 const simButton = document.getElementById("simButton");
 const soundButton = document.getElementById("soundButton");
@@ -162,7 +177,7 @@ const staffLeaveSound = document.getElementById("staffLeaveSound");
 
 let minimized = false;
 let simActive = false;
-let audioEnabled = false; // start muted
+let audioEnabled = false;
 let previousStaff = [];
 
 const simNames = [
@@ -227,6 +242,7 @@ minMaxButton.addEventListener("click", () => {
   minimized = !minimized;
   if(minimized){
     staffListEl.style.display = "none";
+    leftStaffListEl.style.display = "none";
     resizer.style.display = "none";
     staffWidget.style.height = "36px";
     staffWidget.style.width = "150px";
@@ -291,6 +307,7 @@ async function fetchStaff() {
 
     previousStaff = players;
 
+    // Render main staff list
     if(players.length === 0){
       staffListEl.innerHTML = "No staff online";
       headerTitle.textContent = "Online Staff (0)";
@@ -314,6 +331,30 @@ async function fetchStaff() {
 
       headerTitle.textContent = `Online Staff (${players.length})`;
       headerTitle.style.color = "limegreen";
+    }
+
+    // Render leaving staff in left section
+    if(leftStaff.length > 0){
+      leftStaffListEl.style.display = 'block';
+      leftStaff.forEach(p => {
+        const leaveDiv = document.createElement('div');
+        leaveDiv.className = 'staff-entry staff-leave';
+        leaveDiv.innerHTML = `
+          <img src="${p[3]}" alt="avatar" class="staff-avatar">
+          <div class="staff-info">
+            <span class="staff-name">${p[0]}</span>
+            <span class="staff-job">${p[5]}</span>
+          </div>
+        `;
+        leftStaffListEl.appendChild(leaveDiv);
+
+        setTimeout(() => {
+          leaveDiv.remove();
+          if(leftStaffListEl.children.length === 0){
+            leftStaffListEl.style.display = 'none';
+          }
+        }, 5000);
+      });
     }
 
   } catch(err){
