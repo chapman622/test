@@ -116,10 +116,10 @@
     border-radius: 3px;
   }
 
-  .new-join { /* CHANGED */
-    background-color: rgba(255, 255, 0, 0.3); /* yellow highlight */ 
-    transition: background-color 2s ease; 
-  } /* CHANGED */
+  .new-join {
+    background-color: rgba(255, 255, 0, 0.3);
+    transition: background-color 2s ease;
+  }
 
 </style>
 </head>
@@ -138,7 +138,6 @@
   <div id="resizer"></div>
 </div>
 
-<!-- Audio with proper type -->
 <audio id="staffJoinSound" preload="auto">
   <source src="https://chapman622.github.io/test/assets/join.mp3" type="audio/mpeg">
   Your browser does not support the audio element.
@@ -166,14 +165,12 @@ let simActive = false;
 let audioEnabled = false; // start muted
 let previousStaff = [];
 
-// Random names for SimStaff
 const simNames = [
   "Alex", "Jamie", "Taylor", "Jordan", "Casey", 
   "Morgan", "Riley", "Avery", "Quinn", "Reese",
   "Charlie", "Dakota", "Harley", "Peyton", "Skyler"
 ];
 
-// Dragging
 let isDragging = false;
 let dragOffsetX = 0;
 let dragOffsetY = 0;
@@ -300,21 +297,20 @@ async function fetchStaff() {
       headerTitle.style.color = "red";
     } else {
       staffListEl.innerHTML = players.map(p => `
-        <div class="staff-entry ${newStaff.includes(p) ? 'new-join' : ''}"> // CHANGED
+        <div class="staff-entry ${newStaff.includes(p) ? 'new-join' : ''}">
           <img src="${p[3]}" alt="avatar" class="staff-avatar">
           <div class="staff-info">
             <span class="staff-name">${p[0]}</span>
             <span class="staff-job">${p[5]}</span>
           </div>
         </div>
-      `).join(""); // CHANGED
+      `).join("");
 
-      // Remove highlight after 3 seconds
-      setTimeout(() => { // CHANGED
-        document.querySelectorAll('.new-join').forEach(el => { // CHANGED
-          el.classList.remove('new-join'); // CHANGED
-        }); // CHANGED
-      }, 3000); // CHANGED
+      setTimeout(() => {
+        document.querySelectorAll('.new-join').forEach(el => {
+          el.classList.remove('new-join');
+        });
+      }, 3000);
 
       headerTitle.textContent = `Online Staff (${players.length})`;
       headerTitle.style.color = "limegreen";
