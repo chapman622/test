@@ -115,6 +115,12 @@
     cursor: nwse-resize;
     border-radius: 3px;
   }
+
+  .new-join { /* CHANGED */
+    background-color: rgba(255, 255, 0, 0.3); /* yellow highlight */ 
+    transition: background-color 2s ease; 
+  } /* CHANGED */
+
 </style>
 </head>
 <body>
@@ -132,13 +138,12 @@
   <div id="resizer"></div>
 </div>
 
-<!-- Join sound -->
+<!-- Audio with proper type -->
 <audio id="staffJoinSound" preload="auto">
   <source src="https://chapman622.github.io/test/assets/join.mp3" type="audio/mpeg">
   Your browser does not support the audio element.
 </audio>
 
-<!-- Leave sound -->
 <audio id="staffLeaveSound" preload="auto">
   <source src="https://chapman622.github.io/test/assets/leave.mp3" type="audio/mpeg">
   Your browser does not support the audio element.
@@ -182,7 +187,6 @@ staffWidget.addEventListener("mousedown", e => {
 
 document.addEventListener("mouseup", () => { 
   if(isDragging){
-    // Save position on drag end
     localStorage.setItem("staffWidgetPos", JSON.stringify({
       left: staffWidget.style.left,
       top: staffWidget.style.top
@@ -199,7 +203,6 @@ document.addEventListener("mousemove", e => {
   }
 });
 
-// Restore position on load
 window.addEventListener("load", () => {
   const savedPos = localStorage.getItem("staffWidgetPos");
   if(savedPos){
@@ -209,7 +212,6 @@ window.addEventListener("load", () => {
   }
 });
 
-// Resizing
 let isResizing = false;
 resizer.addEventListener("mousedown", e => {
   isResizing = true;
@@ -224,7 +226,6 @@ document.addEventListener("mousemove", e => {
   }
 });
 
-// Minimize/Maximize
 minMaxButton.addEventListener("click", () => {
   minimized = !minimized;
   if(minimized){
@@ -240,14 +241,12 @@ minMaxButton.addEventListener("click", () => {
   }
 });
 
-// Sim button toggle
 simButton.addEventListener("click", () => {
   simActive = !simActive;
   simButton.classList.toggle("active", simActive);
   fetchStaff();
 });
 
-// Sound toggle button
 soundButton.addEventListener("click", () => {
   audioEnabled = !audioEnabled;
   if(audioEnabled){
@@ -259,7 +258,6 @@ soundButton.addEventListener("click", () => {
   }
 });
 
-// Fetch staff
 async function fetchStaff() {
   try {
     const res = await fetch(serverUrl);
@@ -273,7 +271,7 @@ async function fetchStaff() {
       let simStaff = [];
       for(let i=0;i<simCount;i++){
         const name = simNames[Math.floor(Math.random() * simNames.length)];
-        const avatarIndex = Math.floor(Math.random() * 5); // 0-4 avatars
+        const avatarIndex = Math.floor(Math.random() * 5);
         simStaff.push([name, 0, 0, `https://cdn.discordapp.com/embed/avatars/${avatarIndex}.png`, true, "Job", true]);
       }
       players = [...realStaff, ...simStaff];
@@ -281,7 +279,6 @@ async function fetchStaff() {
       players = realStaff;
     }
 
-    // Detect joins and leaves
     const previousNames = previousStaff.map(p => p[0]);
     const currentNames = players.map(p => p[0]);
 
@@ -291,7 +288,6 @@ async function fetchStaff() {
     if(newStaff.length > 0 && audioEnabled){
       staffJoinSound.play().catch(e => console.log("Join sound error:", e));
     }
-
     if(leftStaff.length > 0 && audioEnabled){
       staffLeaveSound.play().catch(e => console.log("Leave sound error:", e));
     }
@@ -304,14 +300,22 @@ async function fetchStaff() {
       headerTitle.style.color = "red";
     } else {
       staffListEl.innerHTML = players.map(p => `
-        <div class="staff-entry">
+        <div class="staff-entry ${newStaff.includes(p) ? 'new-join' : ''}"> // CHANGED
           <img src="${p[3]}" alt="avatar" class="staff-avatar">
           <div class="staff-info">
             <span class="staff-name">${p[0]}</span>
             <span class="staff-job">${p[5]}</span>
           </div>
         </div>
-      `).join("");
+      `).join(""); // CHANGED
+
+      // Remove highlight after 3 seconds
+      setTimeout(() => { // CHANGED
+        document.querySelectorAll('.new-join').forEach(el => { // CHANGED
+          el.classList.remove('new-join'); // CHANGED
+        }); // CHANGED
+      }, 3000); // CHANGED
+
       headerTitle.textContent = `Online Staff (${players.length})`;
       headerTitle.style.color = "limegreen";
     }
@@ -324,7 +328,6 @@ async function fetchStaff() {
   }
 }
 
-// Auto-refresh
 setInterval(fetchStaff, 10000);
 fetchStaff();
 </script>
