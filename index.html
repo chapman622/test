@@ -85,6 +85,12 @@
     display: none;
   }
 
+  #leftHeader {
+    font-weight: bold;
+    color: red;
+    margin-bottom: 4px;
+  }
+
   .staff-entry {
     display: flex;
     align-items: center;
@@ -148,7 +154,9 @@
     </div>
   </div>
   <div id="staffList"></div>
-  <div id="leftStaffList"></div>
+  <div id="leftStaffList">
+    <div id="leftHeader">Left Staff</div>
+  </div>
   <div id="resizer"></div>
 </div>
 
@@ -350,10 +358,10 @@ async function fetchStaff() {
 
         setTimeout(() => {
           leaveDiv.remove();
-          if(leftStaffListEl.children.length === 0){
+          if(leftStaffListEl.children.length <= 1){ // only header left
             leftStaffListEl.style.display = 'none';
           }
-        }, 5000);
+        }, 8000); // 8 seconds now
       });
     }
 
