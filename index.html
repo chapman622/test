@@ -24,6 +24,7 @@
     user-select: none;
     box-shadow: 0 4px 12px rgba(0,0,0,0.5);
     max-height: 600px;
+    transition: height 0.2s ease;
   }
 
   #staffHeader {
@@ -33,6 +34,8 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
+    height: 36px; /* fixed header height */
+    box-sizing: border-box;
   }
 
   #staffHeader span { font-weight: bold; }
@@ -72,30 +75,12 @@
     position: absolute; right: 0; bottom: 0; cursor: nwse-resize; border-radius: 3px;
   }
 
-  /* Slide-in for new joins */
-  @keyframes slideIn {
-    from { transform: translateX(-100%); opacity: 0; }
-    to { transform: translateX(0); opacity: 1; }
-  }
+  @keyframes slideIn { from { transform: translateX(-100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+  @keyframes highlightFade { from { background-color: rgba(255, 255, 0, 0.6); } to { background-color: transparent; } }
+  .new-join { animation: slideIn 0.5s ease forwards, highlightFade 3s ease forwards; }
 
-  /* Highlight fade for joins */
-  @keyframes highlightFade {
-    from { background-color: rgba(255, 255, 0, 0.6); }
-    to { background-color: transparent; }
-  }
-
-  .new-join {
-    animation: slideIn 0.5s ease forwards, highlightFade 3s ease forwards;
-  }
-
-  /* Fade-out for leaving staff */
-  @keyframes fadeOut {
-    from { opacity: 1; }
-    to { opacity: 0; }
-  }
-  .staff-leave.fade-out {
-    animation: fadeOut 1s forwards;
-  }
+  @keyframes fadeOut { from { opacity: 1; } to { opacity: 0; } }
+  .staff-leave.fade-out { animation: fadeOut 1s forwards; }
 </style>
 </head>
 <body>
@@ -152,8 +137,19 @@ document.addEventListener("mousemove", e=>{if(isResizing){let newWidth=e.clientX
 
 minMaxButton.addEventListener("click", ()=>{
   minimized=!minimized;
-  if(minimized){ staffListEl.style.display="none"; leftStaffListEl.style.display="none"; resizer.style.display="none"; staffWidget.style.height="36px"; staffWidget.style.width="150px"; minMaxButton.textContent="+"; }
-  else{ staffListEl.style.display="block"; resizer.style.display="block"; minMaxButton.textContent="-"; }
+  if(minimized){
+    staffListEl.style.display="none";
+    leftStaffListEl.style.display="none";
+    resizer.style.display="none";
+    staffWidget.style.height="36px"; // shrink to header only
+    minMaxButton.textContent="+";
+  } else {
+    staffListEl.style.display="block";
+    resizer.style.display="block";
+    if(leftStaffListEl.children.length>1) leftStaffListEl.style.display="block";
+    staffWidget.style.height="auto"; // expand to fit content
+    minMaxButton.textContent="-";
+  }
 });
 
 simButton.addEventListener("click", ()=>{ simActive=!simActive; simButton.classList.toggle("active",simActive); fetchStaff(); });
@@ -228,4 +224,3 @@ fetchStaff();
 </script>
 </body>
 </html>
-
