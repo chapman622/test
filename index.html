@@ -23,6 +23,8 @@
     flex-direction: column;
     user-select: none;
     box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+    /* optional max height */
+    max-height: 600px;
   }
 
   #staffHeader {
@@ -73,15 +75,10 @@
 
   #staffList, #leftStaffList {
     padding: 6px;
-    overflow-y: auto;
-  }
-
-  #staffList {
-    max-height: 300px;
+    /* overflow-y removed to eliminate scroll bars */
   }
 
   #leftStaffList {
-    max-height: 100px;
     display: none;
   }
 
@@ -332,9 +329,7 @@ async function fetchStaff() {
       `).join("");
 
       setTimeout(() => {
-        document.querySelectorAll('.new-join').forEach(el => {
-          el.classList.remove('new-join');
-        });
+        document.querySelectorAll('.new-join').forEach(el => el.classList.remove('new-join'));
       }, 3000);
 
       headerTitle.textContent = `Online Staff (${players.length})`;
@@ -358,10 +353,10 @@ async function fetchStaff() {
 
         setTimeout(() => {
           leaveDiv.remove();
-          if(leftStaffListEl.children.length <= 1){ // only header left
+          if(leftStaffListEl.children.length <= 1){
             leftStaffListEl.style.display = 'none';
           }
-        }, 8000); // 8 seconds now
+        }, 8000);
       });
     }
 
