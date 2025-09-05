@@ -23,7 +23,6 @@
     flex-direction: column;
     user-select: none;
     box-shadow: 0 4px 12px rgba(0,0,0,0.5);
-    /* optional max height */
     max-height: 600px;
   }
 
@@ -36,14 +35,9 @@
     justify-content: space-between;
   }
 
-  #staffHeader span {
-    font-weight: bold;
-  }
+  #staffHeader span { font-weight: bold; }
 
-  #staffButtons {
-    display: flex;
-    gap: 4px;
-  }
+  #staffButtons { display: flex; gap: 4px; }
 
   .staff-button {
     border: none;
@@ -59,83 +53,39 @@
     justify-content: center;
   }
 
-  .staff-button.muted {
-    background: red;
-    text-decoration: line-through;
-  }
+  .staff-button.muted { background: red; text-decoration: line-through; }
+  .staff-button.enabled { background: #43b581; text-decoration: none; }
+  .staff-button.active { background: #43b581; }
 
-  .staff-button.enabled {
-    background: #43b581;
-    text-decoration: none;
-  }
+  #staffList, #leftStaffList { padding: 6px; }
 
-  .staff-button.active {
-    background: #43b581;
-  }
+  #leftStaffList { display: none; }
+  #leftHeader { font-weight: bold; color: red; margin-bottom: 4px; }
 
-  #staffList, #leftStaffList {
-    padding: 6px;
-    /* overflow-y removed to eliminate scroll bars */
-  }
-
-  #leftStaffList {
-    display: none;
-  }
-
-  #leftHeader {
-    font-weight: bold;
-    color: red;
-    margin-bottom: 4px;
-  }
-
-  .staff-entry {
-    display: flex;
-    align-items: center;
-    margin-bottom: 4px;
-  }
-
-  .staff-avatar {
-    width: 32px;
-    height: 32px;
-    border-radius: 50%;
-    margin-right: 6px;
-  }
-
-  .staff-info {
-    display: flex;
-    flex-direction: column;
-  }
-
-  .staff-info .staff-name {
-    font-weight: bold;
-    color: white;
-  }
-
-  .staff-info .staff-job {
-    font-size: 0.85em;
-    color: white;
-  }
+  .staff-entry { display: flex; align-items: center; margin-bottom: 4px; }
+  .staff-avatar { width: 32px; height: 32px; border-radius: 50%; margin-right: 6px; }
+  .staff-info { display: flex; flex-direction: column; }
+  .staff-info .staff-name { font-weight: bold; color: white; }
+  .staff-info .staff-job { font-size: 0.85em; color: white; }
 
   #resizer {
-    width: 12px;
-    height: 12px;
-    background: #7289da;
-    position: absolute;
-    right: 0;
-    bottom: 0;
-    cursor: nwse-resize;
-    border-radius: 3px;
+    width: 12px; height: 12px; background: #7289da;
+    position: absolute; right: 0; bottom: 0; cursor: nwse-resize; border-radius: 3px;
   }
 
-  .new-join {
-    background-color: rgba(255, 255, 0, 0.3);
-    transition: background-color 2s ease;
+  /* Slide-in for new joins */
+  @keyframes slideIn {
+    from { transform: translateX(-100%); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
   }
+  .new-join { animation: slideIn 0.5s ease forwards; }
 
-  .staff-leave {
-    background-color: rgba(255, 0, 0, 0.3);
-    transition: background-color 2s ease;
+  /* Fade-out for leaving staff */
+  @keyframes fadeOut {
+    from { opacity: 1; }
+    to { opacity: 0; }
   }
+  .staff-leave.fade-out { animation: fadeOut 1s forwards; }
 
 </style>
 </head>
@@ -180,195 +130,96 @@ const resizer = document.getElementById("resizer");
 const staffJoinSound = document.getElementById("staffJoinSound");
 const staffLeaveSound = document.getElementById("staffLeaveSound");
 
-let minimized = false;
-let simActive = false;
-let audioEnabled = false;
-let previousStaff = [];
+let minimized = false, simActive = false, audioEnabled = false, previousStaff = [];
+const simNames = ["Alex","Jamie","Taylor","Jordan","Casey","Morgan","Riley","Avery","Quinn","Reese","Charlie","Dakota","Harley","Peyton","Skyler"];
+let isDragging = false, dragOffsetX=0, dragOffsetY=0;
 
-const simNames = [
-  "Alex", "Jamie", "Taylor", "Jordan", "Casey", 
-  "Morgan", "Riley", "Avery", "Quinn", "Reese",
-  "Charlie", "Dakota", "Harley", "Peyton", "Skyler"
-];
+staffWidget.addEventListener("mousedown", e => { if(e.target===resizer) return; isDragging=true; dragOffsetX=e.clientX-staffWidget.offsetLeft; dragOffsetY=e.clientY-staffWidget.offsetTop; });
+document.addEventListener("mouseup", () => { if(isDragging) localStorage.setItem("staffWidgetPos", JSON.stringify({left: staffWidget.style.left, top: staffWidget.style.top})); isDragging=false; isResizing=false; });
+document.addEventListener("mousemove", e => { if(isDragging){ staffWidget.style.left=(e.clientX-dragOffsetX)+"px"; staffWidget.style.top=(e.clientY-dragOffsetY)+"px"; } });
+window.addEventListener("load", ()=>{ const savedPos=localStorage.getItem("staffWidgetPos"); if(savedPos){ const {left,top}=JSON.parse(savedPos); staffWidget.style.left=left; staffWidget.style.top=top; }});
+let isResizing=false;
+resizer.addEventListener("mousedown", e => { isResizing=true; e.stopPropagation(); });
+document.addEventListener("mousemove", e => { if(isResizing){ let newWidth=e.clientX-staffWidget.offsetLeft; let newHeight=e.clientY-staffWidget.offsetTop; staffWidget.style.width=Math.max(150,newWidth)+"px"; staffWidget.style.height=Math.max(50,newHeight)+"px"; } });
 
-let isDragging = false;
-let dragOffsetX = 0;
-let dragOffsetY = 0;
-
-staffWidget.addEventListener("mousedown", e => {
-  if(e.target === resizer) return;
-  isDragging = true;
-  dragOffsetX = e.clientX - staffWidget.offsetLeft;
-  dragOffsetY = e.clientY - staffWidget.offsetTop;
-});
-
-document.addEventListener("mouseup", () => { 
-  if(isDragging){
-    localStorage.setItem("staffWidgetPos", JSON.stringify({
-      left: staffWidget.style.left,
-      top: staffWidget.style.top
-    }));
-  }
-  isDragging = false; 
-  isResizing = false; 
-});
-
-document.addEventListener("mousemove", e => {
-  if(isDragging){
-    staffWidget.style.left = (e.clientX - dragOffsetX) + "px";
-    staffWidget.style.top = (e.clientY - dragOffsetY) + "px";
-  }
-});
-
-window.addEventListener("load", () => {
-  const savedPos = localStorage.getItem("staffWidgetPos");
-  if(savedPos){
-    const {left, top} = JSON.parse(savedPos);
-    staffWidget.style.left = left;
-    staffWidget.style.top = top;
-  }
-});
-
-let isResizing = false;
-resizer.addEventListener("mousedown", e => {
-  isResizing = true;
-  e.stopPropagation();
-});
-document.addEventListener("mousemove", e => {
-  if(isResizing){
-    let newWidth = e.clientX - staffWidget.offsetLeft;
-    let newHeight = e.clientY - staffWidget.offsetTop;
-    staffWidget.style.width = Math.max(150, newWidth) + "px";
-    staffWidget.style.height = Math.max(50, newHeight) + "px";
-  }
-});
-
-minMaxButton.addEventListener("click", () => {
+minMaxButton.addEventListener("click", ()=>{
   minimized = !minimized;
-  if(minimized){
-    staffListEl.style.display = "none";
-    leftStaffListEl.style.display = "none";
-    resizer.style.display = "none";
-    staffWidget.style.height = "36px";
-    staffWidget.style.width = "150px";
-    minMaxButton.textContent = "+";
-  } else {
-    staffListEl.style.display = "block";
-    resizer.style.display = "block";
-    minMaxButton.textContent = "-";
-  }
+  if(minimized){ staffListEl.style.display="none"; leftStaffListEl.style.display="none"; resizer.style.display="none"; staffWidget.style.height="36px"; staffWidget.style.width="150px"; minMaxButton.textContent="+"; }
+  else{ staffListEl.style.display="block"; resizer.style.display="block"; minMaxButton.textContent="-"; }
 });
 
-simButton.addEventListener("click", () => {
-  simActive = !simActive;
-  simButton.classList.toggle("active", simActive);
-  fetchStaff();
+simButton.addEventListener("click", ()=>{ simActive=!simActive; simButton.classList.toggle("active",simActive); fetchStaff(); });
+
+soundButton.addEventListener("click", ()=>{
+  audioEnabled=!audioEnabled;
+  if(audioEnabled){ soundButton.classList.remove("muted"); soundButton.classList.add("enabled"); }
+  else{ soundButton.classList.remove("enabled"); soundButton.classList.add("muted"); }
 });
 
-soundButton.addEventListener("click", () => {
-  audioEnabled = !audioEnabled;
-  if(audioEnabled){
-    soundButton.classList.remove("muted");
-    soundButton.classList.add("enabled");
-  } else {
-    soundButton.classList.remove("enabled");
-    soundButton.classList.add("muted");
-  }
-});
-
-async function fetchStaff() {
-  try {
-    const res = await fetch(serverUrl);
-    const data = await res.json();
-
-    let players = data.players || [];
-    let realStaff = players.filter(p => Array.isArray(p) && p[4] === true);
-
+async function fetchStaff(){
+  try{
+    const res=await fetch(serverUrl);
+    const data=await res.json();
+    let players=data.players||[];
+    let realStaff=players.filter(p=>Array.isArray(p)&&p[4]===true);
     if(simActive){
-      let simCount = Math.min(20, Math.floor(Math.random()*10)+1);
-      let simStaff = [];
+      let simCount=Math.min(20,Math.floor(Math.random()*10)+1);
+      let simStaff=[];
       for(let i=0;i<simCount;i++){
-        const name = simNames[Math.floor(Math.random() * simNames.length)];
-        const avatarIndex = Math.floor(Math.random() * 5);
-        simStaff.push([name, 0, 0, `https://cdn.discordapp.com/embed/avatars/${avatarIndex}.png`, true, "Job", true]);
+        const name=simNames[Math.floor(Math.random()*simNames.length)];
+        const avatarIndex=Math.floor(Math.random()*5);
+        simStaff.push([name,0,0,`https://cdn.discordapp.com/embed/avatars/${avatarIndex}.png`,true,"Job",true]);
       }
-      players = [...realStaff, ...simStaff];
-    } else {
-      players = realStaff;
+      players=[...realStaff,...simStaff];
+    } else players=realStaff;
+
+    const previousNames=previousStaff.map(p=>p[0]);
+    const currentNames=players.map(p=>p[0]);
+    const newStaff=players.filter(p=>!previousNames.includes(p[0]));
+    const leftStaff=previousStaff.filter(p=>!currentNames.includes(p[0]));
+
+    if(newStaff.length>0 && audioEnabled) staffJoinSound.play().catch(e=>console.log("Join sound error:",e));
+    if(leftStaff.length>0 && audioEnabled) staffLeaveSound.play().catch(e=>console.log("Leave sound error:",e));
+
+    previousStaff=players;
+
+    if(players.length===0){
+      staffListEl.innerHTML="No staff online";
+      headerTitle.textContent="Online Staff (0)";
+      headerTitle.style.color="red";
+    } else{
+      staffListEl.innerHTML=players.map(p=>`<div class="staff-entry ${newStaff.includes(p)?'new-join':''}"><img src="${p[3]}" class="staff-avatar"><div class="staff-info"><span class="staff-name">${p[0]}</span><span class="staff-job">${p[5]}</span></div></div>`).join("");
+      setTimeout(()=>{ document.querySelectorAll('.new-join').forEach(el=>el.classList.remove('new-join')); },3000);
+      headerTitle.textContent=`Online Staff (${players.length})`;
+      headerTitle.style.color="limegreen";
     }
 
-    const previousNames = previousStaff.map(p => p[0]);
-    const currentNames = players.map(p => p[0]);
-
-    const newStaff = players.filter(p => !previousNames.includes(p[0]));
-    const leftStaff = previousStaff.filter(p => !currentNames.includes(p[0]));
-
-    if(newStaff.length > 0 && audioEnabled){
-      staffJoinSound.play().catch(e => console.log("Join sound error:", e));
-    }
-    if(leftStaff.length > 0 && audioEnabled){
-      staffLeaveSound.play().catch(e => console.log("Leave sound error:", e));
-    }
-
-    previousStaff = players;
-
-    // Render main staff list
-    if(players.length === 0){
-      staffListEl.innerHTML = "No staff online";
-      headerTitle.textContent = "Online Staff (0)";
-      headerTitle.style.color = "red";
-    } else {
-      staffListEl.innerHTML = players.map(p => `
-        <div class="staff-entry ${newStaff.includes(p) ? 'new-join' : ''}">
-          <img src="${p[3]}" alt="avatar" class="staff-avatar">
-          <div class="staff-info">
-            <span class="staff-name">${p[0]}</span>
-            <span class="staff-job">${p[5]}</span>
-          </div>
-        </div>
-      `).join("");
-
-      setTimeout(() => {
-        document.querySelectorAll('.new-join').forEach(el => el.classList.remove('new-join'));
-      }, 3000);
-
-      headerTitle.textContent = `Online Staff (${players.length})`;
-      headerTitle.style.color = "limegreen";
-    }
-
-    // Render leaving staff in left section
-    if(leftStaff.length > 0){
-      leftStaffListEl.style.display = 'block';
-      leftStaff.forEach(p => {
-        const leaveDiv = document.createElement('div');
-        leaveDiv.className = 'staff-entry staff-leave';
-        leaveDiv.innerHTML = `
-          <img src="${p[3]}" alt="avatar" class="staff-avatar">
-          <div class="staff-info">
-            <span class="staff-name">${p[0]}</span>
-            <span class="staff-job">${p[5]}</span>
-          </div>
-        `;
+    if(leftStaff.length>0){
+      leftStaffListEl.style.display='block';
+      leftStaff.forEach(p=>{
+        const leaveDiv=document.createElement('div');
+        leaveDiv.className='staff-entry staff-leave';
+        leaveDiv.innerHTML=`<img src="${p[3]}" class="staff-avatar"><div class="staff-info"><span class="staff-name">${p[0]}</span><span class="staff-job">${p[5]}</span></div>`;
         leftStaffListEl.appendChild(leaveDiv);
-
-        setTimeout(() => {
-          leaveDiv.remove();
-          if(leftStaffListEl.children.length <= 1){
-            leftStaffListEl.style.display = 'none';
-          }
-        }, 8000);
+        setTimeout(()=>{
+          leaveDiv.classList.add('fade-out');
+          setTimeout(()=>{
+            leaveDiv.remove();
+            if(leftStaffListEl.children.length<=1) leftStaffListEl.style.display='none';
+          },1000);
+        },7000);
       });
     }
 
   } catch(err){
-    staffListEl.innerHTML = "Error fetching staff";
-    headerTitle.textContent = "Online Staff (?)";
-    headerTitle.style.color = "orange";
+    staffListEl.innerHTML="Error fetching staff";
+    headerTitle.textContent="Online Staff (?)";
+    headerTitle.style.color="orange";
     console.error(err);
   }
 }
 
-setInterval(fetchStaff, 10000);
+setInterval(fetchStaff,10000);
 fetchStaff();
 </script>
 
