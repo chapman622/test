@@ -36,7 +36,6 @@
   }
 
   #staffHeader span { font-weight: bold; }
-
   #staffButtons { display: flex; gap: 4px; }
 
   .staff-button {
@@ -58,7 +57,6 @@
   .staff-button.active { background: #43b581; }
 
   #staffList, #leftStaffList { padding: 6px; }
-
   #leftStaffList { display: none; }
   #leftHeader { font-weight: bold; color: red; margin-bottom: 4px; }
 
@@ -78,15 +76,25 @@
     from { transform: translateX(-100%); opacity: 0; }
     to { transform: translateX(0); opacity: 1; }
   }
-  .new-join { animation: slideIn 0.5s ease forwards; }
+
+  /* Highlight fade for joins */
+  @keyframes highlightFade {
+    from { background-color: rgba(255, 255, 0, 0.6); }
+    to { background-color: transparent; }
+  }
+
+  .new-join {
+    animation: slideIn 0.5s ease forwards, highlightFade 3s ease forwards;
+  }
 
   /* Fade-out for leaving staff */
   @keyframes fadeOut {
     from { opacity: 1; }
     to { opacity: 0; }
   }
-  .staff-leave.fade-out { animation: fadeOut 1s forwards; }
-
+  .staff-leave.fade-out {
+    animation: fadeOut 1s forwards;
+  }
 </style>
 </head>
 <body>
@@ -109,12 +117,10 @@
 
 <audio id="staffJoinSound" preload="auto">
   <source src="https://chapman622.github.io/test/assets/join.mp3" type="audio/mpeg">
-  Your browser does not support the audio element.
 </audio>
 
 <audio id="staffLeaveSound" preload="auto">
   <source src="https://chapman622.github.io/test/assets/leave.mp3" type="audio/mpeg">
-  Your browser does not support the audio element.
 </audio>
 
 <script>
@@ -130,31 +136,28 @@ const resizer = document.getElementById("resizer");
 const staffJoinSound = document.getElementById("staffJoinSound");
 const staffLeaveSound = document.getElementById("staffLeaveSound");
 
-let minimized = false, simActive = false, audioEnabled = false, previousStaff = [];
-const simNames = ["Alex","Jamie","Taylor","Jordan","Casey","Morgan","Riley","Avery","Quinn","Reese","Charlie","Dakota","Harley","Peyton","Skyler"];
-let isDragging = false, dragOffsetX=0, dragOffsetY=0;
+let minimized=false, simActive=false, audioEnabled=false, previousStaff=[];
+const simNames=["Alex","Jamie","Taylor","Jordan","Casey","Morgan","Riley","Avery","Quinn","Reese","Charlie","Dakota","Harley","Peyton","Skyler"];
+let isDragging=false, dragOffsetX=0, dragOffsetY=0;
 
-staffWidget.addEventListener("mousedown", e => { if(e.target===resizer) return; isDragging=true; dragOffsetX=e.clientX-staffWidget.offsetLeft; dragOffsetY=e.clientY-staffWidget.offsetTop; });
-document.addEventListener("mouseup", () => { if(isDragging) localStorage.setItem("staffWidgetPos", JSON.stringify({left: staffWidget.style.left, top: staffWidget.style.top})); isDragging=false; isResizing=false; });
-document.addEventListener("mousemove", e => { if(isDragging){ staffWidget.style.left=(e.clientX-dragOffsetX)+"px"; staffWidget.style.top=(e.clientY-dragOffsetY)+"px"; } });
-window.addEventListener("load", ()=>{ const savedPos=localStorage.getItem("staffWidgetPos"); if(savedPos){ const {left,top}=JSON.parse(savedPos); staffWidget.style.left=left; staffWidget.style.top=top; }});
+staffWidget.addEventListener("mousedown", e=>{if(e.target===resizer)return; isDragging=true; dragOffsetX=e.clientX-staffWidget.offsetLeft; dragOffsetY=e.clientY-staffWidget.offsetTop;});
+document.addEventListener("mouseup", ()=>{if(isDragging) localStorage.setItem("staffWidgetPos", JSON.stringify({left: staffWidget.style.left, top: staffWidget.style.top})); isDragging=false; isResizing=false;});
+document.addEventListener("mousemove", e=>{if(isDragging){staffWidget.style.left=(e.clientX-dragOffsetX)+"px"; staffWidget.style.top=(e.clientY-dragOffsetY)+"px";}});
+window.addEventListener("load", ()=>{const savedPos=localStorage.getItem("staffWidgetPos"); if(savedPos){const {left,top}=JSON.parse(savedPos); staffWidget.style.left=left; staffWidget.style.top=top;}});
+
 let isResizing=false;
-resizer.addEventListener("mousedown", e => { isResizing=true; e.stopPropagation(); });
-document.addEventListener("mousemove", e => { if(isResizing){ let newWidth=e.clientX-staffWidget.offsetLeft; let newHeight=e.clientY-staffWidget.offsetTop; staffWidget.style.width=Math.max(150,newWidth)+"px"; staffWidget.style.height=Math.max(50,newHeight)+"px"; } });
+resizer.addEventListener("mousedown", e=>{isResizing=true; e.stopPropagation();});
+document.addEventListener("mousemove", e=>{if(isResizing){let newWidth=e.clientX-staffWidget.offsetLeft; let newHeight=e.clientY-staffWidget.offsetTop; staffWidget.style.width=Math.max(150,newWidth)+"px"; staffWidget.style.height=Math.max(50,newHeight)+"px";}});
 
 minMaxButton.addEventListener("click", ()=>{
-  minimized = !minimized;
+  minimized=!minimized;
   if(minimized){ staffListEl.style.display="none"; leftStaffListEl.style.display="none"; resizer.style.display="none"; staffWidget.style.height="36px"; staffWidget.style.width="150px"; minMaxButton.textContent="+"; }
   else{ staffListEl.style.display="block"; resizer.style.display="block"; minMaxButton.textContent="-"; }
 });
 
 simButton.addEventListener("click", ()=>{ simActive=!simActive; simButton.classList.toggle("active",simActive); fetchStaff(); });
 
-soundButton.addEventListener("click", ()=>{
-  audioEnabled=!audioEnabled;
-  if(audioEnabled){ soundButton.classList.remove("muted"); soundButton.classList.add("enabled"); }
-  else{ soundButton.classList.remove("enabled"); soundButton.classList.add("muted"); }
-});
+soundButton.addEventListener("click", ()=>{ audioEnabled=!audioEnabled; if(audioEnabled){ soundButton.classList.remove("muted"); soundButton.classList.add("enabled"); } else { soundButton.classList.remove("enabled"); soundButton.classList.add("muted"); } });
 
 async function fetchStaff(){
   try{
@@ -162,6 +165,7 @@ async function fetchStaff(){
     const data=await res.json();
     let players=data.players||[];
     let realStaff=players.filter(p=>Array.isArray(p)&&p[4]===true);
+
     if(simActive){
       let simCount=Math.min(20,Math.floor(Math.random()*10)+1);
       let simStaff=[];
@@ -183,17 +187,16 @@ async function fetchStaff(){
 
     previousStaff=players;
 
-    if(players.length===0){
-      staffListEl.innerHTML="No staff online";
-      headerTitle.textContent="Online Staff (0)";
-      headerTitle.style.color="red";
-    } else{
+    // Render main staff
+    if(players.length===0){ staffListEl.innerHTML="No staff online"; headerTitle.textContent="Online Staff (0)"; headerTitle.style.color="red"; }
+    else{
       staffListEl.innerHTML=players.map(p=>`<div class="staff-entry ${newStaff.includes(p)?'new-join':''}"><img src="${p[3]}" class="staff-avatar"><div class="staff-info"><span class="staff-name">${p[0]}</span><span class="staff-job">${p[5]}</span></div></div>`).join("");
       setTimeout(()=>{ document.querySelectorAll('.new-join').forEach(el=>el.classList.remove('new-join')); },3000);
       headerTitle.textContent=`Online Staff (${players.length})`;
       headerTitle.style.color="limegreen";
     }
 
+    // Render leaving staff
     if(leftStaff.length>0){
       leftStaffListEl.style.display='block';
       leftStaff.forEach(p=>{
@@ -222,6 +225,5 @@ async function fetchStaff(){
 setInterval(fetchStaff,10000);
 fetchStaff();
 </script>
-
 </body>
 </html>
