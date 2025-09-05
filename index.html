@@ -132,9 +132,15 @@
   <div id="resizer"></div>
 </div>
 
-<!-- Audio with proper type -->
+<!-- Join sound -->
 <audio id="staffJoinSound" preload="auto">
   <source src="https://chapman622.github.io/test/assets/join.mp3" type="audio/mpeg">
+  Your browser does not support the audio element.
+</audio>
+
+<!-- Leave sound -->
+<audio id="staffLeaveSound" preload="auto">
+  <source src="https://chapman622.github.io/test/assets/leave.mp3" type="audio/mpeg">
   Your browser does not support the audio element.
 </audio>
 
@@ -148,6 +154,7 @@ const soundButton = document.getElementById("soundButton");
 const minMaxButton = document.getElementById("minMaxButton");
 const resizer = document.getElementById("resizer");
 const staffJoinSound = document.getElementById("staffJoinSound");
+const staffLeaveSound = document.getElementById("staffLeaveSound");
 
 let minimized = false;
 let simActive = false;
@@ -274,12 +281,21 @@ async function fetchStaff() {
       players = realStaff;
     }
 
-    // Detect new staff by name
+    // Detect joins and leaves
     const previousNames = previousStaff.map(p => p[0]);
+    const currentNames = players.map(p => p[0]);
+
     const newStaff = players.filter(p => !previousNames.includes(p[0]));
+    const leftStaff = previousStaff.filter(p => !currentNames.includes(p[0]));
+
     if(newStaff.length > 0 && audioEnabled){
-      staffJoinSound.play().catch(e => console.log("Sound play error:", e));
+      staffJoinSound.play().catch(e => console.log("Join sound error:", e));
     }
+
+    if(leftStaff.length > 0 && audioEnabled){
+      staffLeaveSound.play().catch(e => console.log("Leave sound error:", e));
+    }
+
     previousStaff = players;
 
     if(players.length === 0){
